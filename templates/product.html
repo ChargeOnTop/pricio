@@ -636,11 +636,11 @@
             <!-- Кнопки действий -->
             <div class="product-actions">
                 {% if current_user %}
-                <button id="btn-favorite" class="btn-action btn-favorite" onclick="toggleFavorite()">
+                <button id="btn-favorite" class="btn-action btn-favorite" type="button">
                     <span id="fav-icon">🤍</span>
                     <span id="fav-text">В избранное</span>
                 </button>
-                <button id="btn-alert" class="btn-action btn-alert" onclick="toggleAlert()">
+                <button id="btn-alert" class="btn-action btn-alert" type="button">
                     <span id="alert-icon">🔔</span>
                     <span id="alert-text">Следить за ценой</span>
                 </button>
@@ -938,6 +938,10 @@
                 console.error('Error toggling alert:', e);
             }
         }
+        
+        // Добавляем обработчики событий
+        document.getElementById('btn-favorite').addEventListener('click', toggleFavorite);
+        document.getElementById('btn-alert').addEventListener('click', toggleAlert);
         
         // Проверяем статус при загрузке
         checkStatus();
