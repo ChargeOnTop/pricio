@@ -16,8 +16,15 @@ from datetime import datetime
 from auth import (
     init_users_db, register_user, login_user, get_current_user, login_required,
     add_to_favorites, remove_from_favorites, get_favorites, is_favorite,
-    add_price_alert, remove_price_alert, get_price_alerts, has_price_alert
+    add_price_alert, remove_price_alert, get_price_alerts, has_price_alert,
+    link_telegram_with_code, unlink_telegram, get_user_stats
 )
+
+# Импорт конфигурации
+try:
+    from config import TELEGRAM_BOT_USERNAME
+except ImportError:
+    TELEGRAM_BOT_USERNAME = 'PricioNotifyBot'
 
 app = Flask(__name__)
 app.secret_key = 'pricio-secret-key-change-in-production-2024'  # Для сессий
@@ -811,6 +818,59 @@ def favorites_page():
                            user=user, 
                            favorites=enriched_favorites,
                            alerts=enriched_alerts)
+
+
+# ============================================================================
+# ПРОФИЛЬ ПОЛЬЗОВАТЕЛЯ
+# ============================================================================
+
+@app.route('/profile')
+@login_required
+def profile_page():
+    """Страница профиля пользователя"""
+    user = get_current_user()
+    stats = get_user_stats(user['id'])
+    
+    return render_template('profile.html',
+                           user=user,
+                           stats=stats,
+                           telegram_bot_username=TELEGRAM_BOT_USERNAME)
+
+
+@app.route('/profile/link-telegram', methods=['POST'])
+@login_required
+def link_telegram():
+    """Привязка Telegram через код"""
+    user = get_current_user()
+    code = request.form.get('code', '').strip().upper()
+    
+    if not code or len(code) != 8:
+        flash('Введите корректный 8-символьный код', 'error')
+        return redirect(url_for('profile_page'))
+    
+    result = link_telegram_with_code(user['id'], code)
+    
+    if result['success']:
+        flash(result['message'], 'success')
+    else:
+        flash(result['message'], 'error')
+    
+    return redirect(url_for('profile_page'))
+
+
+@app.route('/profile/unlink-telegram', methods=['POST'])
+@login_required
+def unlink_telegram_route():
+    """Отвязка Telegram"""
+    user = get_current_user()
+    result = unlink_telegram(user['id'])
+    
+    if result['success']:
+        flash('Telegram успешно отвязан', 'success')
+    else:
+        flash('Ошибка при отвязке Telegram', 'error')
+    
+    return redirect(url_for('profile_page'))
 
 
 @app.route('/api/favorites/<store_id>/<product_id>', methods=['POST', 'DELETE'])

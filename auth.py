@@ -5,7 +5,7 @@
 
 import sqlite3
 import os
-from datetime import datetime
+from datetime import datetime, timedelta
 from werkzeug.security import generate_password_hash, check_password_hash
 from functools import wraps
 from flask import session, redirect, url_for, flash, request
@@ -38,6 +38,16 @@ def init_users_db():
             telegram_chat_id TEXT,
             created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
             last_login TIMESTAMP
+        )
+    ''')
+    
+    # Таблица кодов привязки Telegram
+    cursor.execute('''
+        CREATE TABLE IF NOT EXISTS telegram_linking_codes (
+            code TEXT PRIMARY KEY,
+            chat_id TEXT NOT NULL,
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            expires_at TIMESTAMP NOT NULL
         )
     ''')
     
@@ -400,6 +410,148 @@ def update_telegram_chat_id(user_id: int, chat_id: str) -> dict:
     conn.commit()
     conn.close()
     return {'success': True, 'message': 'Telegram привязан'}
+
+
+def unlink_telegram(user_id: int) -> dict:
+    """Отвязать Telegram от аккаунта"""
+    conn = get_users_db()
+    conn.execute(
+        'UPDATE users SET telegram_chat_id = NULL WHERE id = ?',
+        (user_id,)
+    )
+    conn.commit()
+    conn.close()
+    return {'success': True, 'message': 'Telegram отвязан'}
+
+
+def save_linking_code(code: str, chat_id: int, expires_minutes: int = 10) -> bool:
+    """Сохранить код привязки в базу данных"""
+    conn = get_users_db()
+    expires_at = datetime.now() + timedelta(minutes=expires_minutes)
+    try:
+        # Удаляем старые коды для этого chat_id
+        conn.execute('DELETE FROM telegram_linking_codes WHERE chat_id = ?', (str(chat_id),))
+        # Сохраняем новый код
+        conn.execute(
+            'INSERT INTO telegram_linking_codes (code, chat_id, expires_at) VALUES (?, ?, ?)',
+            (code.upper(), str(chat_id), expires_at)
+        )
+        conn.commit()
+        conn.close()
+        return True
+    except Exception as e:
+        print(f"Error saving linking code: {e}")
+        conn.close()
+        return False
+
+
+def verify_linking_code(code: str) -> int:
+    """
+    Проверить код привязки и вернуть chat_id
+    
+    Returns:
+        chat_id или None если код неверный/истёк
+    """
+    conn = get_users_db()
+    code = code.upper().strip()
+    
+    # Удаляем истёкшие коды
+    conn.execute('DELETE FROM telegram_linking_codes WHERE expires_at < ?', (datetime.now(),))
+    conn.commit()
+    
+    # Ищем код
+    result = conn.execute(
+        'SELECT chat_id FROM telegram_linking_codes WHERE code = ? AND expires_at > ?',
+        (code, datetime.now())
+    ).fetchone()
+    
+    if result:
+        chat_id = int(result['chat_id'])
+        # Удаляем использованный код
+        conn.execute('DELETE FROM telegram_linking_codes WHERE code = ?', (code,))
+        conn.commit()
+        conn.close()
+        return chat_id
+    
+    conn.close()
+    return None
+
+
+def link_telegram_with_code(user_id: int, code: str) -> dict:
+    """
+    Привязать Telegram к аккаунту через код из бота
+    
+    Args:
+        user_id: ID пользователя на сайте
+        code: Код из Telegram бота
+    
+    Returns:
+        dict: {'success': bool, 'message': str}
+    """
+    chat_id = verify_linking_code(code)
+    
+    if not chat_id:
+        return {'success': False, 'message': 'Неверный или истёкший код привязки'}
+    
+    # Проверяем, не привязан ли уже этот Telegram к другому аккаунту
+    conn = get_users_db()
+    existing = conn.execute(
+        'SELECT id, username FROM users WHERE telegram_chat_id = ?',
+        (str(chat_id),)
+    ).fetchone()
+    
+    if existing and existing['id'] != user_id:
+        conn.close()
+        return {
+            'success': False, 
+            'message': f'Этот Telegram уже привязан к аккаунту {existing["username"]}'
+        }
+    
+    # Привязываем
+    conn.execute(
+        'UPDATE users SET telegram_chat_id = ? WHERE id = ?',
+        (str(chat_id), user_id)
+    )
+    conn.commit()
+    conn.close()
+    
+    return {'success': True, 'message': 'Telegram успешно привязан! Теперь вы будете получать уведомления.'}
+
+
+def get_user_stats(user_id: int) -> dict:
+    """Получить статистику пользователя"""
+    conn = get_users_db()
+    
+    user = conn.execute(
+        'SELECT username, email, telegram_chat_id, created_at FROM users WHERE id = ?',
+        (user_id,)
+    ).fetchone()
+    
+    if not user:
+        conn.close()
+        return None
+    
+    favorites_count = conn.execute(
+        'SELECT COUNT(*) FROM favorites WHERE user_id = ?',
+        (user_id,)
+    ).fetchone()[0]
+    
+    alerts_count = conn.execute(
+        'SELECT COUNT(*) FROM price_alerts WHERE user_id = ? AND is_active = 1',
+        (user_id,)
+    ).fetchone()[0]
+    
+    conn.close()
+    
+    return {
+        'username': user['username'],
+        'email': user['email'],
+        'telegram_linked': bool(user['telegram_chat_id']),
+        'telegram_chat_id': user['telegram_chat_id'],
+        'created_at': user['created_at'],
+        'favorites_count': favorites_count,
+        'alerts_count': alerts_count
+    }
 
 
 # Инициализация при импорте

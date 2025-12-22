@@ -1,0 +1,430 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Профиль - Pricio</title>
+    <link href="https://fonts.googleapis.com/css2?family=Rubik:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Rubik', sans-serif;
+            background: linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%);
+            min-height: 100vh;
+            color: #fff;
+        }
+        
+        .header {
+            background: rgba(0, 0, 0, 0.3);
+            padding: 1rem 2rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            backdrop-filter: blur(10px);
+        }
+        
+        .logo {
+            font-size: 1.5rem;
+            font-weight: 700;
+            color: #e94560;
+            text-decoration: none;
+        }
+        
+        .nav-links {
+            display: flex;
+            gap: 1.5rem;
+            align-items: center;
+        }
+        
+        .nav-links a {
+            color: #fff;
+            text-decoration: none;
+            opacity: 0.8;
+            transition: opacity 0.2s;
+        }
+        
+        .nav-links a:hover {
+            opacity: 1;
+        }
+        
+        .container {
+            max-width: 800px;
+            margin: 2rem auto;
+            padding: 0 1rem;
+        }
+        
+        .page-title {
+            font-size: 2rem;
+            margin-bottom: 2rem;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+        
+        .card {
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 16px;
+            padding: 1.5rem;
+            margin-bottom: 1.5rem;
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+        
+        .card-title {
+            font-size: 1.2rem;
+            font-weight: 600;
+            margin-bottom: 1rem;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+        
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 1rem;
+        }
+        
+        .stat-item {
+            background: rgba(255, 255, 255, 0.05);
+            padding: 1rem;
+            border-radius: 12px;
+            text-align: center;
+        }
+        
+        .stat-value {
+            font-size: 2rem;
+            font-weight: 700;
+            color: #e94560;
+        }
+        
+        .stat-label {
+            font-size: 0.85rem;
+            opacity: 0.7;
+            margin-top: 0.25rem;
+        }
+        
+        .info-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 0.75rem 0;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+        }
+        
+        .info-row:last-child {
+            border-bottom: none;
+        }
+        
+        .info-label {
+            opacity: 0.7;
+        }
+        
+        .info-value {
+            font-weight: 500;
+        }
+        
+        .telegram-section {
+            margin-top: 1rem;
+        }
+        
+        .telegram-status {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            padding: 1rem;
+            border-radius: 12px;
+            margin-bottom: 1rem;
+        }
+        
+        .telegram-status.linked {
+            background: rgba(46, 204, 113, 0.2);
+            border: 1px solid rgba(46, 204, 113, 0.3);
+        }
+        
+        .telegram-status.not-linked {
+            background: rgba(255, 193, 7, 0.2);
+            border: 1px solid rgba(255, 193, 7, 0.3);
+        }
+        
+        .btn {
+            padding: 0.75rem 1.5rem;
+            border: none;
+            border-radius: 8px;
+            font-family: inherit;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.2s;
+            text-decoration: none;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+        
+        .btn-primary {
+            background: #e94560;
+            color: white;
+        }
+        
+        .btn-primary:hover {
+            background: #d63850;
+            transform: translateY(-2px);
+        }
+        
+        .btn-secondary {
+            background: rgba(255, 255, 255, 0.1);
+            color: white;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+        }
+        
+        .btn-secondary:hover {
+            background: rgba(255, 255, 255, 0.2);
+        }
+        
+        .btn-danger {
+            background: rgba(231, 76, 60, 0.2);
+            color: #e74c3c;
+            border: 1px solid rgba(231, 76, 60, 0.3);
+        }
+        
+        .btn-danger:hover {
+            background: rgba(231, 76, 60, 0.3);
+        }
+        
+        .form-group {
+            margin-bottom: 1rem;
+        }
+        
+        .form-group label {
+            display: block;
+            margin-bottom: 0.5rem;
+            font-weight: 500;
+        }
+        
+        .form-group input {
+            width: 100%;
+            padding: 0.75rem 1rem;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            border-radius: 8px;
+            background: rgba(255, 255, 255, 0.05);
+            color: white;
+            font-family: inherit;
+            font-size: 1rem;
+        }
+        
+        .form-group input:focus {
+            outline: none;
+            border-color: #e94560;
+        }
+        
+        .form-group input::placeholder {
+            color: rgba(255, 255, 255, 0.4);
+        }
+        
+        .link-form {
+            display: flex;
+            gap: 0.5rem;
+            margin-top: 1rem;
+        }
+        
+        .link-form input {
+            flex: 1;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            text-align: center;
+            font-weight: 600;
+        }
+        
+        .alert {
+            padding: 1rem;
+            border-radius: 8px;
+            margin-bottom: 1rem;
+        }
+        
+        .alert-success {
+            background: rgba(46, 204, 113, 0.2);
+            border: 1px solid rgba(46, 204, 113, 0.3);
+            color: #2ecc71;
+        }
+        
+        .alert-error {
+            background: rgba(231, 76, 60, 0.2);
+            border: 1px solid rgba(231, 76, 60, 0.3);
+            color: #e74c3c;
+        }
+        
+        .alert-info {
+            background: rgba(52, 152, 219, 0.2);
+            border: 1px solid rgba(52, 152, 219, 0.3);
+            color: #3498db;
+        }
+        
+        .steps {
+            margin-top: 1rem;
+            padding-left: 1.5rem;
+        }
+        
+        .steps li {
+            margin-bottom: 0.5rem;
+            opacity: 0.9;
+        }
+        
+        .code-box {
+            background: rgba(0, 0, 0, 0.3);
+            padding: 0.5rem 1rem;
+            border-radius: 6px;
+            font-family: monospace;
+            font-size: 1.1rem;
+            display: inline-block;
+        }
+        
+        .actions {
+            display: flex;
+            gap: 1rem;
+            margin-top: 1rem;
+            flex-wrap: wrap;
+        }
+        
+        @media (max-width: 600px) {
+            .header {
+                flex-direction: column;
+                gap: 1rem;
+            }
+            
+            .stats-grid {
+                grid-template-columns: 1fr 1fr;
+            }
+            
+            .link-form {
+                flex-direction: column;
+            }
+            
+            .actions {
+                flex-direction: column;
+            }
+            
+            .btn {
+                justify-content: center;
+            }
+        }
+    </style>
+</head>
+<body>
+    <header class="header">
+        <a href="/" class="logo">Pricio</a>
+        <nav class="nav-links">
+            <a href="/">🏠 Главная</a>
+            <a href="/favorites">❤️ Избранное</a>
+            <a href="/profile">👤 Профиль</a>
+            <a href="/logout">🚪 Выйти</a>
+        </nav>
+    </header>
+    
+    <div class="container">
+        <h1 class="page-title">👤 Профиль</h1>
+        
+        {% with messages = get_flashed_messages(with_categories=true) %}
+            {% if messages %}
+                {% for category, message in messages %}
+                <div class="alert alert-{{ 'success' if category == 'success' else 'error' if category == 'error' else 'info' }}">
+                    {{ message }}
+                </div>
+                {% endfor %}
+            {% endif %}
+        {% endwith %}
+        
+        <!-- Статистика -->
+        <div class="card">
+            <h2 class="card-title">📊 Статистика</h2>
+            <div class="stats-grid">
+                <div class="stat-item">
+                    <div class="stat-value">{{ stats.favorites_count }}</div>
+                    <div class="stat-label">В избранном</div>
+                </div>
+                <div class="stat-item">
+                    <div class="stat-value">{{ stats.alerts_count }}</div>
+                    <div class="stat-label">Отслеживается</div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Информация об аккаунте -->
+        <div class="card">
+            <h2 class="card-title">📋 Информация</h2>
+            <div class="info-row">
+                <span class="info-label">Имя пользователя</span>
+                <span class="info-value">{{ stats.username }}</span>
+            </div>
+            <div class="info-row">
+                <span class="info-label">Email</span>
+                <span class="info-value">{{ stats.email }}</span>
+            </div>
+            <div class="info-row">
+                <span class="info-label">Дата регистрации</span>
+                <span class="info-value">{{ stats.created_at[:10] if stats.created_at else '—' }}</span>
+            </div>
+        </div>
+        
+        <!-- Telegram уведомления -->
+        <div class="card">
+            <h2 class="card-title">🔔 Telegram уведомления</h2>
+            
+            {% if stats.telegram_linked %}
+            <div class="telegram-status linked">
+                ✅ Telegram привязан
+            </div>
+            <p>Вы будете получать уведомления о снижении цен на отслеживаемые товары в Telegram.</p>
+            
+            <div class="actions">
+                <form action="/profile/unlink-telegram" method="POST" style="display: inline;">
+                    <button type="submit" class="btn btn-danger">
+                        🔗 Отвязать Telegram
+                    </button>
+                </form>
+            </div>
+            
+            {% else %}
+            <div class="telegram-status not-linked">
+                ⚠️ Telegram не привязан
+            </div>
+            
+            <p>Привяжите Telegram, чтобы получать уведомления о снижении цен:</p>
+            
+            <ol class="steps">
+                <li>Откройте бота <a href="https://t.me/{{ telegram_bot_username }}" target="_blank" style="color: #e94560;">@{{ telegram_bot_username }}</a> в Telegram</li>
+                <li>Нажмите <strong>Start</strong> или отправьте <span class="code-box">/start</span></li>
+                <li>Скопируйте полученный код привязки</li>
+                <li>Введите код ниже:</li>
+            </ol>
+            
+            <form class="link-form" action="/profile/link-telegram" method="POST">
+                <input type="text" name="code" placeholder="XXXXXXXX" maxlength="8" required 
+                       pattern="[A-Fa-f0-9]{8}" title="8-символьный код из Telegram">
+                <button type="submit" class="btn btn-primary">
+                    ✓ Привязать
+                </button>
+            </form>
+            {% endif %}
+        </div>
+        
+        <!-- Быстрые действия -->
+        <div class="card">
+            <h2 class="card-title">⚡ Быстрые действия</h2>
+            <div class="actions">
+                <a href="/favorites" class="btn btn-secondary">
+                    ❤️ Избранное
+                </a>
+                <a href="/" class="btn btn-secondary">
+                    🏪 К магазинам
+                </a>
+            </div>
+        </div>
+    </div>
+</body>
+</html>
+
