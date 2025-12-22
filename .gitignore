@@ -1,0 +1,62 @@
+# Базы данных
+*.db
+*.sqlite
+*.sqlite3
+
+# Экспортированные данные
+products_*.json
+products_*.csv
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+env/
+venv/
+ENV/
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# Отладочные файлы
+debug_*.html
+debug_*.png
+page_screenshot.png
+page_source.html
+*.html
+*.png
+!templates/*.html
+
+# Временные файлы
+*.txt
+!requirements.txt
+!README.md
+
+# Логи
+*.log
+
+# OS
+.DS_Store
+Thumbs.db
+

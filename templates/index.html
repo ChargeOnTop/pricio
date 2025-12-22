@@ -1,0 +1,588 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Товары Пятёрочки</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Rubik:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --red: #E30613;
+            --red-dark: #C50510;
+            --green: #1DB954;
+            --green-dark: #18a348;
+            --yellow: #FFB800;
+            --bg: #F5F5F5;
+            --white: #FFFFFF;
+            --text: #1A1A1A;
+            --text-secondary: #6B7280;
+            --border: #E5E7EB;
+        }
+        
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Rubik', sans-serif;
+            background: var(--bg);
+            color: var(--text);
+            min-height: 100vh;
+        }
+        
+        /* Header */
+        .header {
+            background: var(--white);
+            box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+            position: sticky;
+            top: 0;
+            z-index: 100;
+        }
+        
+        .header-top {
+            background: var(--red);
+            padding: 8px 0;
+        }
+        
+        .header-top-inner {
+            max-width: 1280px;
+            margin: 0 auto;
+            padding: 0 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        .header-top a {
+            color: white;
+            text-decoration: none;
+            font-size: 13px;
+            opacity: 0.9;
+        }
+        
+        .header-top a:hover {
+            opacity: 1;
+        }
+        
+        .header-main {
+            max-width: 1280px;
+            margin: 0 auto;
+            padding: 16px 20px;
+            display: flex;
+            align-items: center;
+            gap: 24px;
+        }
+        
+        .logo {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            text-decoration: none;
+        }
+        
+        .logo-icon {
+            width: 48px;
+            height: 48px;
+            background: linear-gradient(135deg, var(--green) 0%, #0f9d3f 100%);
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-size: 28px;
+            font-weight: 700;
+        }
+        
+        .logo-text {
+            font-size: 22px;
+            font-weight: 700;
+            color: var(--text);
+        }
+        
+        .search-form {
+            flex: 1;
+            display: flex;
+            gap: 12px;
+            align-items: center;
+        }
+        
+        .search-box {
+            flex: 1;
+            position: relative;
+        }
+        
+        .search-box input {
+            width: 100%;
+            padding: 14px 20px 14px 48px;
+            border: 2px solid var(--border);
+            border-radius: 12px;
+            font-size: 15px;
+            font-family: inherit;
+            transition: border-color 0.2s;
+        }
+        
+        .search-box input:focus {
+            outline: none;
+            border-color: var(--red);
+        }
+        
+        .search-box::before {
+            content: "🔍";
+            position: absolute;
+            left: 16px;
+            top: 50%;
+            transform: translateY(-50%);
+            font-size: 18px;
+        }
+        
+        .filter-select {
+            padding: 14px 16px;
+            border: 2px solid var(--border);
+            border-radius: 12px;
+            font-size: 14px;
+            font-family: inherit;
+            background: white;
+            cursor: pointer;
+            min-width: 160px;
+        }
+        
+        .filter-select:focus {
+            outline: none;
+            border-color: var(--red);
+        }
+        
+        .btn-search {
+            background: var(--red);
+            color: white;
+            border: none;
+            padding: 14px 28px;
+            border-radius: 12px;
+            font-size: 15px;
+            font-weight: 600;
+            font-family: inherit;
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+        
+        .btn-search:hover {
+            background: var(--red-dark);
+        }
+        
+        /* Stats bar */
+        .stats-bar {
+            background: linear-gradient(90deg, var(--red) 0%, #ff4757 100%);
+            padding: 12px 0;
+        }
+        
+        .stats-bar-inner {
+            max-width: 1280px;
+            margin: 0 auto;
+            padding: 0 20px;
+            display: flex;
+            justify-content: center;
+            gap: 48px;
+        }
+        
+        .stat-item {
+            color: white;
+            text-align: center;
+        }
+        
+        .stat-value {
+            font-size: 24px;
+            font-weight: 700;
+        }
+        
+        .stat-label {
+            font-size: 13px;
+            opacity: 0.9;
+        }
+        
+        /* Main content */
+        .container {
+            max-width: 1280px;
+            margin: 0 auto;
+            padding: 24px 20px;
+        }
+        
+        .section-title {
+            font-size: 24px;
+            font-weight: 700;
+            margin-bottom: 20px;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+        
+        .section-title::before {
+            content: "";
+            width: 4px;
+            height: 28px;
+            background: var(--red);
+            border-radius: 2px;
+        }
+        
+        /* Products grid */
+        .products-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+            gap: 16px;
+        }
+        
+        .product-card {
+            background: var(--white);
+            border-radius: 16px;
+            padding: 16px;
+            transition: box-shadow 0.2s, transform 0.2s;
+            display: flex;
+            flex-direction: column;
+        }
+        
+        .product-card:hover {
+            box-shadow: 0 8px 24px rgba(0,0,0,0.12);
+            transform: translateY(-2px);
+        }
+        
+        .product-badge {
+            display: inline-block;
+            background: var(--red);
+            color: white;
+            padding: 4px 10px;
+            border-radius: 6px;
+            font-size: 11px;
+            font-weight: 600;
+            margin-bottom: 12px;
+            align-self: flex-start;
+        }
+        
+        .product-name {
+            font-size: 14px;
+            font-weight: 500;
+            line-height: 1.4;
+            margin-bottom: 8px;
+            color: var(--text);
+            flex-grow: 1;
+        }
+        
+        .product-weight {
+            font-size: 12px;
+            color: var(--text-secondary);
+            margin-bottom: 12px;
+        }
+        
+        .product-prices {
+            display: flex;
+            align-items: baseline;
+            gap: 8px;
+            margin-bottom: 12px;
+        }
+        
+        .product-price {
+            font-size: 22px;
+            font-weight: 700;
+            color: var(--text);
+        }
+        
+        .product-price sup {
+            font-size: 14px;
+            font-weight: 600;
+        }
+        
+        .product-price-old {
+            font-size: 14px;
+            color: var(--text-secondary);
+            text-decoration: line-through;
+        }
+        
+        .product-discount {
+            background: var(--yellow);
+            color: var(--text);
+            padding: 2px 6px;
+            border-radius: 4px;
+            font-size: 11px;
+            font-weight: 600;
+        }
+        
+        .product-meta {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding-top: 12px;
+            border-top: 1px solid var(--border);
+        }
+        
+        .product-date {
+            font-size: 11px;
+            color: var(--text-secondary);
+        }
+        
+        .btn-cart {
+            background: var(--green);
+            color: white;
+            border: none;
+            padding: 8px 16px;
+            border-radius: 8px;
+            font-size: 12px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+        
+        .btn-cart:hover {
+            background: var(--green-dark);
+        }
+        
+        /* Pagination */
+        .pagination {
+            display: flex;
+            justify-content: center;
+            gap: 6px;
+            margin-top: 32px;
+            flex-wrap: wrap;
+        }
+        
+        .pagination a, .pagination span {
+            padding: 10px 16px;
+            border-radius: 8px;
+            text-decoration: none;
+            font-size: 14px;
+            font-weight: 500;
+            transition: all 0.2s;
+        }
+        
+        .pagination a {
+            background: var(--white);
+            color: var(--text);
+            border: 1px solid var(--border);
+        }
+        
+        .pagination a:hover {
+            border-color: var(--red);
+            color: var(--red);
+        }
+        
+        .pagination a.active {
+            background: var(--red);
+            color: white;
+            border-color: var(--red);
+        }
+        
+        .pagination .dots {
+            color: var(--text-secondary);
+            background: transparent;
+            border: none;
+        }
+        
+        /* No products */
+        .no-products {
+            text-align: center;
+            padding: 80px 20px;
+            background: var(--white);
+            border-radius: 16px;
+        }
+        
+        .no-products h2 {
+            font-size: 20px;
+            margin-bottom: 8px;
+            color: var(--text);
+        }
+        
+        .no-products p {
+            color: var(--text-secondary);
+        }
+        
+        /* Footer */
+        .footer {
+            background: var(--text);
+            color: white;
+            padding: 32px 0;
+            margin-top: 48px;
+        }
+        
+        .footer-inner {
+            max-width: 1280px;
+            margin: 0 auto;
+            padding: 0 20px;
+            text-align: center;
+        }
+        
+        .footer p {
+            opacity: 0.7;
+            font-size: 13px;
+        }
+
+        /* Responsive */
+        @media (max-width: 768px) {
+            .header-main {
+                flex-wrap: wrap;
+            }
+            
+            .search-form {
+                width: 100%;
+                flex-wrap: wrap;
+            }
+            
+            .filter-select {
+                flex: 1;
+                min-width: 120px;
+            }
+            
+            .stats-bar-inner {
+                gap: 24px;
+            }
+            
+            .stat-value {
+                font-size: 20px;
+            }
+            
+            .products-grid {
+                grid-template-columns: repeat(2, 1fr);
+            }
+        }
+        
+        @media (max-width: 480px) {
+            .products-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+    <header class="header">
+        <div class="header-top">
+            <div class="header-top-inner">
+                <span style="color: white; font-size: 13px;">База данных товаров из каталога 5ka.ru</span>
+                <span style="color: white; font-size: 13px;">Обновлено: сегодня</span>
+            </div>
+        </div>
+        
+        <div class="header-main">
+            <a href="/" class="logo" style="margin-right: 16px;">
+                <div class="logo-icon" style="background: {{ store.color if store else '#1DB954' }};">
+                    {% if store_id == 'magnit' %}М{% else %}5{% endif %}
+                </div>
+                <span class="logo-text">{{ store.name if store else 'Пятёрочка' }}</span>
+            </a>
+            <a href="/" style="color: var(--red); text-decoration: none; font-weight: 500;">← Все магазины</a>
+            
+            <form class="search-form" method="GET" action="/store/{{ store_id }}">
+                <div class="search-box">
+                    <input type="text" name="search" placeholder="Найти товары..." value="{{ search }}">
+                </div>
+                
+                <select name="category" class="filter-select">
+                    <option value="">Все категории</option>
+                    {% for cat in categories %}
+                    <option value="{{ cat.category }}" {% if cat.category == current_category %}selected{% endif %}>
+                        {{ cat.category[:30] }}{% if cat.category|length > 30 %}...{% endif %}
+                    </option>
+                    {% endfor %}
+                </select>
+                
+                <select name="sort" class="filter-select">
+                    <option value="scraped_at" {% if sort == 'scraped_at' %}selected{% endif %}>По дате</option>
+                    <option value="price" {% if sort == 'price' %}selected{% endif %}>По цене</option>
+                    <option value="name" {% if sort == 'name' %}selected{% endif %}>По названию</option>
+                </select>
+                
+                <select name="order" class="filter-select">
+                    <option value="asc" {% if order == 'asc' %}selected{% endif %}>↑ По возрастанию</option>
+                    <option value="desc" {% if order == 'desc' %}selected{% endif %}>↓ По убыванию</option>
+                </select>
+                
+                <button type="submit" class="btn-search">Найти</button>
+            </form>
+        </div>
+    </header>
+    
+    <div class="stats-bar">
+        <div class="stats-bar-inner">
+            <div class="stat-item">
+                <div class="stat-value">{{ total }}</div>
+                <div class="stat-label">товаров в базе</div>
+            </div>
+            <div class="stat-item">
+                <div class="stat-value">{{ categories|length }}</div>
+                <div class="stat-label">категорий</div>
+            </div>
+            <div class="stat-item">
+                <div class="stat-value">{{ total_pages }}</div>
+                <div class="stat-label">страниц</div>
+            </div>
+        </div>
+    </div>
+    
+    <main class="container">
+        <h2 class="section-title">{% if search %}Результаты поиска{% else %}Все товары{% endif %}</h2>
+        
+        {% if products %}
+        <div class="products-grid">
+            {% for product in products %}
+            <div class="product-card">
+                {% if product.category %}
+                <span class="product-badge">{{ product.category[:20] }}{% if product.category|length > 20 %}...{% endif %}</span>
+                {% endif %}
+                
+                <div class="product-name">{{ product.name }}</div>
+                
+                <div class="product-prices">
+                    {% set price_int = product.current_price|int %}
+                    {% set price_dec = ((product.current_price - price_int) * 100)|int %}
+                    <span class="product-price">{{ price_int }}<sup>{{ '%02d'|format(price_dec) }}</sup>₽</span>
+                    
+                    {% if product.max_price and product.max_price > product.current_price %}
+                    <span class="product-price-old">{{ "%.0f"|format(product.max_price) }}₽</span>
+                    {% set discount = (((product.max_price - product.current_price) / product.max_price) * 100)|int %}
+                    <span class="product-discount">-{{ discount }}%</span>
+                    {% endif %}
+                </div>
+                
+                <div class="product-meta">
+                    <span class="product-date">{{ product.last_updated[:10] if product.last_updated else '' }}</span>
+                    <a href="/store/{{ store_id }}/product/{{ product.product_id }}" class="btn-cart">История цен</a>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+        
+        {% if total_pages > 1 %}
+        <div class="pagination">
+            {% if page > 1 %}
+            <a href="/store/{{ store_id }}?page={{ page - 1 }}&search={{ search }}&category={{ current_category }}&sort={{ sort }}&order={{ order }}">← Назад</a>
+            {% endif %}
+            
+            {% for p in range(1, total_pages + 1) %}
+                {% if p == page %}
+                <a class="active">{{ p }}</a>
+                {% elif p == 1 or p == total_pages or (p >= page - 2 and p <= page + 2) %}
+                <a href="/store/{{ store_id }}?page={{ p }}&search={{ search }}&category={{ current_category }}&sort={{ sort }}&order={{ order }}">{{ p }}</a>
+                {% elif p == page - 3 or p == page + 3 %}
+                <span class="dots">...</span>
+                {% endif %}
+            {% endfor %}
+            
+            {% if page < total_pages %}
+            <a href="/store/{{ store_id }}?page={{ page + 1 }}&search={{ search }}&category={{ current_category }}&sort={{ sort }}&order={{ order }}">Вперёд →</a>
+            {% endif %}
+        </div>
+        {% endif %}
+        
+        {% else %}
+        <div class="no-products">
+            <h2>Товары не найдены</h2>
+            <p>Попробуйте изменить параметры поиска</p>
+        </div>
+        {% endif %}
+    </main>
+    
+    <footer class="footer">
+        <div class="footer-inner">
+            <p>Данные получены с сайта 5ka.ru • Проект для учебных целей</p>
+        </div>
+    </footer>
+</body>
+</html>
