@@ -1,0 +1,656 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Избранное - Pricio</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Rubik:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --primary: #6366F1;
+            --primary-dark: #4F46E5;
+            --bg: #0F172A;
+            --card: #1E293B;
+            --card-hover: #334155;
+            --text: #F8FAFC;
+            --text-secondary: #94A3B8;
+            --border: #334155;
+            --success: #22C55E;
+            --error: #EF4444;
+            --5ka-color: #E30613;
+            --magnit-color: #E31E24;
+        }
+        
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Rubik', sans-serif;
+            background: var(--bg);
+            min-height: 100vh;
+            color: var(--text);
+            background-image: 
+                radial-gradient(ellipse at top left, rgba(99, 102, 241, 0.08) 0%, transparent 50%),
+                radial-gradient(ellipse at bottom right, rgba(236, 72, 153, 0.05) 0%, transparent 50%);
+        }
+        
+        .header {
+            background: var(--card);
+            border-bottom: 1px solid var(--border);
+            padding: 16px 24px;
+            position: sticky;
+            top: 0;
+            z-index: 100;
+        }
+        
+        .header-content {
+            max-width: 1400px;
+            margin: 0 auto;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+        
+        .logo {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            text-decoration: none;
+            color: var(--text);
+        }
+        
+        .logo-icon {
+            width: 40px;
+            height: 40px;
+            background: linear-gradient(135deg, var(--primary), #EC4899);
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 20px;
+        }
+        
+        .logo-text {
+            font-size: 22px;
+            font-weight: 700;
+        }
+        
+        .nav-links {
+            display: flex;
+            align-items: center;
+            gap: 24px;
+        }
+        
+        .nav-link {
+            color: var(--text-secondary);
+            text-decoration: none;
+            font-size: 15px;
+            font-weight: 500;
+            transition: color 0.2s;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+        
+        .nav-link:hover {
+            color: var(--text);
+        }
+        
+        .nav-link.active {
+            color: var(--primary);
+        }
+        
+        .user-menu {
+            display: flex;
+            align-items: center;
+            gap: 16px;
+        }
+        
+        .user-name {
+            color: var(--text);
+            font-weight: 500;
+        }
+        
+        .btn-logout {
+            color: var(--text-secondary);
+            text-decoration: none;
+            font-size: 14px;
+            padding: 8px 16px;
+            border-radius: 8px;
+            transition: all 0.2s;
+        }
+        
+        .btn-logout:hover {
+            background: var(--card-hover);
+            color: var(--error);
+        }
+        
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 32px 24px;
+        }
+        
+        .page-title {
+            font-size: 28px;
+            font-weight: 700;
+            margin-bottom: 8px;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+        
+        .page-subtitle {
+            color: var(--text-secondary);
+            margin-bottom: 32px;
+        }
+        
+        .tabs {
+            display: flex;
+            gap: 8px;
+            margin-bottom: 32px;
+            border-bottom: 1px solid var(--border);
+            padding-bottom: 16px;
+        }
+        
+        .tab {
+            padding: 12px 24px;
+            background: transparent;
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            color: var(--text-secondary);
+            font-family: inherit;
+            font-size: 15px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.2s;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        
+        .tab:hover {
+            background: var(--card);
+            color: var(--text);
+        }
+        
+        .tab.active {
+            background: var(--primary);
+            border-color: var(--primary);
+            color: white;
+        }
+        
+        .tab-count {
+            background: rgba(255,255,255,0.2);
+            padding: 2px 8px;
+            border-radius: 10px;
+            font-size: 12px;
+        }
+        
+        .empty-state {
+            text-align: center;
+            padding: 80px 24px;
+        }
+        
+        .empty-icon {
+            font-size: 64px;
+            margin-bottom: 24px;
+            opacity: 0.5;
+        }
+        
+        .empty-title {
+            font-size: 20px;
+            font-weight: 600;
+            margin-bottom: 8px;
+            color: var(--text-secondary);
+        }
+        
+        .empty-text {
+            color: var(--text-secondary);
+            opacity: 0.7;
+            margin-bottom: 24px;
+        }
+        
+        .btn-primary {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            padding: 14px 24px;
+            background: linear-gradient(135deg, var(--primary), var(--primary-dark));
+            border: none;
+            border-radius: 12px;
+            color: white;
+            font-family: inherit;
+            font-size: 15px;
+            font-weight: 600;
+            text-decoration: none;
+            cursor: pointer;
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+        
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 25px rgba(99, 102, 241, 0.4);
+        }
+        
+        .products-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+            gap: 20px;
+        }
+        
+        .product-card {
+            background: var(--card);
+            border: 1px solid var(--border);
+            border-radius: 16px;
+            overflow: hidden;
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+        
+        .product-card:hover {
+            transform: translateY(-4px);
+            box-shadow: 0 12px 32px rgba(0, 0, 0, 0.3);
+        }
+        
+        .product-store {
+            padding: 8px 16px;
+            font-size: 12px;
+            font-weight: 600;
+            color: white;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+        
+        .store-5ka { background: var(--5ka-color); }
+        .store-magnit { background: var(--magnit-color); }
+        
+        .product-content {
+            padding: 20px;
+        }
+        
+        .product-name {
+            font-size: 16px;
+            font-weight: 600;
+            margin-bottom: 12px;
+            line-height: 1.4;
+            display: -webkit-box;
+            -webkit-line-clamp: 2;
+            -webkit-box-orient: vertical;
+            overflow: hidden;
+        }
+        
+        .product-name a {
+            color: var(--text);
+            text-decoration: none;
+        }
+        
+        .product-name a:hover {
+            color: var(--primary);
+        }
+        
+        .product-price {
+            display: flex;
+            align-items: baseline;
+            gap: 12px;
+            margin-bottom: 16px;
+        }
+        
+        .price-current {
+            font-size: 24px;
+            font-weight: 700;
+        }
+        
+        .price-old {
+            font-size: 16px;
+            color: var(--text-secondary);
+            text-decoration: line-through;
+        }
+        
+        .price-discount {
+            background: var(--success);
+            color: white;
+            padding: 4px 8px;
+            border-radius: 6px;
+            font-size: 12px;
+            font-weight: 600;
+        }
+        
+        .product-actions {
+            display: flex;
+            gap: 8px;
+        }
+        
+        .btn-action {
+            flex: 1;
+            padding: 10px 16px;
+            border: 1px solid var(--border);
+            border-radius: 10px;
+            background: transparent;
+            color: var(--text-secondary);
+            font-family: inherit;
+            font-size: 13px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.2s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 6px;
+        }
+        
+        .btn-action:hover {
+            background: var(--card-hover);
+            color: var(--text);
+        }
+        
+        .btn-action.btn-remove:hover {
+            background: rgba(239, 68, 68, 0.1);
+            border-color: var(--error);
+            color: var(--error);
+        }
+        
+        .btn-action.btn-alert {
+            background: rgba(34, 197, 94, 0.1);
+            border-color: var(--success);
+            color: var(--success);
+        }
+        
+        .alert-badge {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            background: rgba(34, 197, 94, 0.1);
+            color: var(--success);
+            padding: 6px 12px;
+            border-radius: 8px;
+            font-size: 12px;
+            margin-bottom: 12px;
+        }
+        
+        .price-change {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            font-size: 13px;
+            margin-bottom: 12px;
+        }
+        
+        .price-up {
+            color: var(--error);
+        }
+        
+        .price-down {
+            color: var(--success);
+        }
+        
+        /* Alerts section */
+        .alerts-section {
+            display: none;
+        }
+        
+        .alerts-section.active {
+            display: block;
+        }
+        
+        .favorites-section {
+            display: block;
+        }
+        
+        .favorites-section.hidden {
+            display: none;
+        }
+        
+        .alert-card {
+            background: var(--card);
+            border: 1px solid var(--border);
+            border-radius: 16px;
+            padding: 20px;
+            margin-bottom: 16px;
+            display: flex;
+            align-items: center;
+            gap: 20px;
+        }
+        
+        .alert-info {
+            flex: 1;
+        }
+        
+        .alert-product-name {
+            font-weight: 600;
+            margin-bottom: 4px;
+        }
+        
+        .alert-details {
+            color: var(--text-secondary);
+            font-size: 14px;
+        }
+        
+        .alert-status {
+            padding: 6px 12px;
+            border-radius: 8px;
+            font-size: 13px;
+            font-weight: 500;
+        }
+        
+        .alert-status.active {
+            background: rgba(34, 197, 94, 0.1);
+            color: var(--success);
+        }
+        
+        .alert-status.triggered {
+            background: rgba(99, 102, 241, 0.1);
+            color: var(--primary);
+        }
+    </style>
+</head>
+<body>
+    <header class="header">
+        <div class="header-content">
+            <a href="/" class="logo">
+                <div class="logo-icon">🛒</div>
+                <span class="logo-text">Pricio</span>
+            </a>
+            
+            <nav class="nav-links">
+                <a href="/" class="nav-link">🏠 Главная</a>
+                <a href="/favorites" class="nav-link active">❤️ Избранное</a>
+            </nav>
+            
+            <div class="user-menu">
+                <span class="user-name">{{ user.username }}</span>
+                <a href="/logout" class="btn-logout">Выйти</a>
+            </div>
+        </div>
+    </header>
+    
+    <main class="container">
+        <h1 class="page-title">❤️ Избранное</h1>
+        <p class="page-subtitle">Отслеживайте цены на любимые товары</p>
+        
+        <div class="tabs">
+            <button class="tab active" onclick="showTab('favorites')">
+                ❤️ Избранное
+                <span class="tab-count">{{ favorites|length }}</span>
+            </button>
+            <button class="tab" onclick="showTab('alerts')">
+                🔔 Уведомления
+                <span class="tab-count">{{ alerts|length }}</span>
+            </button>
+        </div>
+        
+        <!-- Избранное -->
+        <section class="favorites-section" id="favoritesSection">
+            {% if favorites %}
+            <div class="products-grid">
+                {% for item in favorites %}
+                <div class="product-card" id="fav-{{ item.store_id }}-{{ item.product_id }}">
+                    <div class="product-store store-{{ item.store_id }}">
+                        <span>{% if item.store_id == '5ka' %}🏪 Пятёрочка{% else %}🏬 Магнит{% endif %}</span>
+                        <span>{{ item.added_at[:10] if item.added_at else '' }}</span>
+                    </div>
+                    <div class="product-content">
+                        <h3 class="product-name">
+                            <a href="/store/{{ item.store_id }}/product/{{ item.product_id }}">
+                                {{ item.name or 'Загрузка...' }}
+                            </a>
+                        </h3>
+                        
+                        {% if item.has_alert %}
+                        <div class="alert-badge">
+                            🔔 Отслеживается
+                        </div>
+                        {% endif %}
+                        
+                        {% if item.price_change %}
+                        <div class="price-change {% if item.price_change > 0 %}price-up{% else %}price-down{% endif %}">
+                            {% if item.price_change > 0 %}
+                            📈 +{{ "%.2f"|format(item.price_change) }} ₽ за неделю
+                            {% else %}
+                            📉 {{ "%.2f"|format(item.price_change) }} ₽ за неделю
+                            {% endif %}
+                        </div>
+                        {% endif %}
+                        
+                        <div class="product-price">
+                            <span class="price-current">{{ "%.2f"|format(item.current_price or 0) }} ₽</span>
+                            {% if item.old_price and item.old_price > (item.current_price or 0) %}
+                            <span class="price-old">{{ "%.2f"|format(item.old_price) }} ₽</span>
+                            <span class="price-discount">
+                                -{{ "%.0f"|format((1 - (item.current_price or 0)/item.old_price) * 100) }}%
+                            </span>
+                            {% endif %}
+                        </div>
+                        
+                        <div class="product-actions">
+                            <button class="btn-action btn-alert {% if item.has_alert %}active{% endif %}" 
+                                    onclick="toggleAlert('{{ item.store_id }}', '{{ item.product_id }}')">
+                                🔔 {% if item.has_alert %}Отписаться{% else %}Следить{% endif %}
+                            </button>
+                            <button class="btn-action btn-remove" 
+                                    onclick="removeFavorite('{{ item.store_id }}', '{{ item.product_id }}')">
+                                ✕ Удалить
+                            </button>
+                        </div>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+            {% else %}
+            <div class="empty-state">
+                <div class="empty-icon">💔</div>
+                <h2 class="empty-title">Пока ничего не добавлено</h2>
+                <p class="empty-text">Добавляйте товары в избранное, чтобы отслеживать их цены</p>
+                <a href="/" class="btn-primary">🛒 Перейти к товарам</a>
+            </div>
+            {% endif %}
+        </section>
+        
+        <!-- Уведомления о ценах -->
+        <section class="alerts-section" id="alertsSection">
+            {% if alerts %}
+            {% for alert in alerts %}
+            <div class="alert-card" id="alert-{{ alert.store_id }}-{{ alert.product_id }}">
+                <div class="alert-info">
+                    <div class="alert-product-name">
+                        <a href="/store/{{ alert.store_id }}/product/{{ alert.product_id }}" 
+                           style="color: var(--text); text-decoration: none;">
+                            {{ alert.product_name or alert.product_id }}
+                        </a>
+                    </div>
+                    <div class="alert-details">
+                        {% if alert.store_id == '5ka' %}🏪 Пятёрочка{% else %}🏬 Магнит{% endif %}
+                        {% if alert.target_price %}
+                        • Целевая цена: {{ "%.2f"|format(alert.target_price) }} ₽
+                        {% else %}
+                        • Любое снижение цены
+                        {% endif %}
+                        {% if alert.last_price %}
+                        • Текущая: {{ "%.2f"|format(alert.last_price) }} ₽
+                        {% endif %}
+                    </div>
+                </div>
+                <span class="alert-status active">✓ Активно</span>
+                <button class="btn-action btn-remove" 
+                        onclick="removeAlert('{{ alert.store_id }}', '{{ alert.product_id }}')"
+                        style="flex: 0;">
+                    ✕
+                </button>
+            </div>
+            {% endfor %}
+            {% else %}
+            <div class="empty-state">
+                <div class="empty-icon">🔔</div>
+                <h2 class="empty-title">Нет активных уведомлений</h2>
+                <p class="empty-text">Подпишитесь на товары, чтобы получать уведомления о снижении цен</p>
+            </div>
+            {% endif %}
+        </section>
+    </main>
+    
+    <script>
+        function showTab(tab) {
+            document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+            event.target.classList.add('active');
+            
+            if (tab === 'favorites') {
+                document.getElementById('favoritesSection').classList.remove('hidden');
+                document.getElementById('alertsSection').classList.remove('active');
+            } else {
+                document.getElementById('favoritesSection').classList.add('hidden');
+                document.getElementById('alertsSection').classList.add('active');
+            }
+        }
+        
+        async function removeFavorite(storeId, productId) {
+            if (!confirm('Удалить из избранного?')) return;
+            
+            try {
+                const response = await fetch(`/api/favorites/${storeId}/${productId}`, {
+                    method: 'DELETE'
+                });
+                
+                if (response.ok) {
+                    document.getElementById(`fav-${storeId}-${productId}`).remove();
+                }
+            } catch (e) {
+                console.error(e);
+            }
+        }
+        
+        async function toggleAlert(storeId, productId) {
+            try {
+                const response = await fetch(`/api/alerts/${storeId}/${productId}`, {
+                    method: 'POST'
+                });
+                
+                if (response.ok) {
+                    location.reload();
+                }
+            } catch (e) {
+                console.error(e);
+            }
+        }
+        
+        async function removeAlert(storeId, productId) {
+            try {
+                const response = await fetch(`/api/alerts/${storeId}/${productId}`, {
+                    method: 'DELETE'
+                });
+                
+                if (response.ok) {
+                    document.getElementById(`alert-${storeId}-${productId}`).remove();
+                }
+            } catch (e) {
+                console.error(e);
+            }
+        }
+    </script>
+</body>
+</html>
+

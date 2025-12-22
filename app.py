@@ -9,10 +9,18 @@ import os
 import re
 from dataclasses import dataclass
 from typing import Optional, List, Dict, Tuple
-from flask import Flask, render_template, request, jsonify
+from flask import Flask, render_template, request, jsonify, redirect, url_for, flash, session
 from datetime import datetime
 
+# Импорт модуля авторизации
+from auth import (
+    init_users_db, register_user, login_user, get_current_user, login_required,
+    add_to_favorites, remove_from_favorites, get_favorites, is_favorite,
+    add_price_alert, remove_price_alert, get_price_alerts, has_price_alert
+)
+
 app = Flask(__name__)
+app.secret_key = 'pricio-secret-key-change-in-production-2024'  # Для сессий
 
 # Базы данных
 DATABASES = {
@@ -678,6 +686,191 @@ def api_compare(product_id):
         'source_store': store_id,
         'similar_in_other_store': similar,
         'other_store': other_store_id
+    })
+
+
+# ============================================================================
+# АВТОРИЗАЦИЯ И ПОЛЬЗОВАТЕЛИ
+# ============================================================================
+
+@app.context_processor
+def inject_user():
+    """Добавляет текущего пользователя во все шаблоны"""
+    return {'current_user': get_current_user()}
+
+
+@app.route('/register', methods=['GET', 'POST'])
+def register_page():
+    """Страница регистрации"""
+    if 'user_id' in session:
+        return redirect(url_for('index'))
+    
+    if request.method == 'POST':
+        username = request.form.get('username', '').strip()
+        email = request.form.get('email', '').strip()
+        password = request.form.get('password', '')
+        password_confirm = request.form.get('password_confirm', '')
+        
+        if password != password_confirm:
+            flash('Пароли не совпадают', 'error')
+            return render_template('register.html')
+        
+        result = register_user(username, email, password)
+        
+        if result['success']:
+            flash('Регистрация успешна! Теперь войдите в систему', 'success')
+            return redirect(url_for('login_page'))
+        else:
+            flash(result['message'], 'error')
+    
+    return render_template('register.html')
+
+
+@app.route('/login', methods=['GET', 'POST'])
+def login_page():
+    """Страница входа"""
+    if 'user_id' in session:
+        return redirect(url_for('index'))
+    
+    if request.method == 'POST':
+        login = request.form.get('login', '').strip()
+        password = request.form.get('password', '')
+        
+        result = login_user(login, password)
+        
+        if result['success']:
+            session['user_id'] = result['user']['id']
+            session['username'] = result['user']['username']
+            flash(f'Добро пожаловать, {result["user"]["username"]}!', 'success')
+            
+            next_url = request.args.get('next')
+            if next_url:
+                return redirect(next_url)
+            return redirect(url_for('index'))
+        else:
+            flash(result['message'], 'error')
+    
+    return render_template('login.html')
+
+
+@app.route('/logout')
+def logout():
+    """Выход из системы"""
+    session.clear()
+    flash('Вы вышли из системы', 'success')
+    return redirect(url_for('index'))
+
+
+# ============================================================================
+# ИЗБРАННОЕ
+# ============================================================================
+
+@app.route('/favorites')
+@login_required
+def favorites_page():
+    """Страница избранного"""
+    user = get_current_user()
+    favorites_list = get_favorites(user['id'])
+    alerts_list = get_price_alerts(user['id'])
+    
+    # Обогащаем данные избранного информацией о товарах
+    enriched_favorites = []
+    for fav in favorites_list:
+        conn = get_db(fav['store_id'])
+        if conn:
+            product = conn.execute(
+                "SELECT * FROM products WHERE product_id = ?", 
+                (fav['product_id'],)
+            ).fetchone()
+            conn.close()
+            
+            if product:
+                item = dict(fav)
+                item.update(dict(product))
+                item['has_alert'] = has_price_alert(user['id'], fav['store_id'], fav['product_id'])
+                enriched_favorites.append(item)
+    
+    # Обогащаем данные уведомлений
+    enriched_alerts = []
+    for alert in alerts_list:
+        conn = get_db(alert['store_id'])
+        if conn:
+            product = conn.execute(
+                "SELECT name, current_price FROM products WHERE product_id = ?", 
+                (alert['product_id'],)
+            ).fetchone()
+            conn.close()
+            
+            item = dict(alert)
+            if product:
+                item['product_name'] = product['name']
+                item['last_price'] = product['current_price']
+            enriched_alerts.append(item)
+    
+    return render_template('favorites.html', 
+                           user=user, 
+                           favorites=enriched_favorites,
+                           alerts=enriched_alerts)
+
+
+@app.route('/api/favorites/<store_id>/<product_id>', methods=['POST', 'DELETE'])
+def api_favorites(store_id, product_id):
+    """API для управления избранным"""
+    user = get_current_user()
+    if not user:
+        return jsonify({'error': 'Unauthorized'}), 401
+    
+    if request.method == 'POST':
+        result = add_to_favorites(user['id'], store_id, product_id)
+        return jsonify(result)
+    else:  # DELETE
+        result = remove_from_favorites(user['id'], store_id, product_id)
+        return jsonify(result)
+
+
+@app.route('/api/favorites/check/<store_id>/<product_id>')
+def api_check_favorite(store_id, product_id):
+    """Проверить, в избранном ли товар"""
+    user = get_current_user()
+    if not user:
+        return jsonify({'is_favorite': False, 'logged_in': False})
+    
+    return jsonify({
+        'is_favorite': is_favorite(user['id'], store_id, product_id),
+        'logged_in': True
+    })
+
+
+# ============================================================================
+# УВЕДОМЛЕНИЯ О ЦЕНАХ
+# ============================================================================
+
+@app.route('/api/alerts/<store_id>/<product_id>', methods=['POST', 'DELETE'])
+def api_alerts(store_id, product_id):
+    """API для управления уведомлениями о ценах"""
+    user = get_current_user()
+    if not user:
+        return jsonify({'error': 'Unauthorized'}), 401
+    
+    if request.method == 'POST':
+        target_price = request.json.get('target_price') if request.is_json else None
+        result = add_price_alert(user['id'], store_id, product_id, target_price)
+        return jsonify(result)
+    else:  # DELETE
+        result = remove_price_alert(user['id'], store_id, product_id)
+        return jsonify(result)
+
+
+@app.route('/api/alerts/check/<store_id>/<product_id>')
+def api_check_alert(store_id, product_id):
+    """Проверить, есть ли подписка на товар"""
+    user = get_current_user()
+    if not user:
+        return jsonify({'has_alert': False, 'logged_in': False})
+    
+    return jsonify({
+        'has_alert': has_price_alert(user['id'], store_id, product_id),
+        'logged_in': True
     })
 
 

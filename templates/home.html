@@ -128,6 +128,24 @@
 </head>
 <body>
     <div class="container">
+        <!-- User navigation -->
+        <div style="position: fixed; top: 20px; right: 20px; display: flex; gap: 12px; align-items: center;">
+            {% if current_user %}
+            <a href="/favorites" style="color: white; text-decoration: none; padding: 10px 20px; background: rgba(255,255,255,0.15); border-radius: 10px; backdrop-filter: blur(10px);">
+                ❤️ Избранное
+            </a>
+            <span style="color: rgba(255,255,255,0.8);">{{ current_user.username }}</span>
+            <a href="/logout" style="color: rgba(255,255,255,0.6); text-decoration: none;">Выйти</a>
+            {% else %}
+            <a href="/login" style="color: white; text-decoration: none; padding: 10px 20px; background: rgba(255,255,255,0.15); border-radius: 10px; backdrop-filter: blur(10px);">
+                Войти
+            </a>
+            <a href="/register" style="color: white; text-decoration: none; padding: 10px 20px; background: rgba(255,255,255,0.25); border-radius: 10px; backdrop-filter: blur(10px); font-weight: 500;">
+                Регистрация
+            </a>
+            {% endif %}
+        </div>
+        
         <h1>🛒 Сравнение цен</h1>
         <p class="subtitle">Мониторинг цен в магазинах Пятёрочка и Магнит</p>
         
