@@ -37,6 +37,112 @@ DATABASES = {
 
 
 # ============================================================================
+# УЛУЧШЕННЫЙ ПОИСК
+# ============================================================================
+
+def normalize_text(text: str) -> str:
+    """Нормализация текста для поиска (Python-сторона)"""
+    if not text:
+        return ""
+    # Приводим к нижнему регистру (работает с кириллицей!)
+    text = text.lower()
+    # Заменяем ё на е
+    text = text.replace('ё', 'е')
+    # Убираем лишние пробелы
+    text = ' '.join(text.split())
+    return text
+
+
+def tokenize_query(query: str) -> List[str]:
+    """Разбиваем запрос на токены (слова)"""
+    query = normalize_text(query)
+    # Разбиваем по пробелам и знакам препинания
+    tokens = re.split(r'[\s,.\-_/\\()]+', query)
+    # Фильтруем пустые и короткие токены
+    tokens = [t for t in tokens if len(t) >= 2]
+    return tokens
+
+
+def smart_search_products(conn, search_query: str, category: str = None, limit: int = 500) -> Tuple[List, int]:
+    """
+    Улучшенный поиск товаров с ранжированием
+    
+    SQLite LOWER() не работает с кириллицей, поэтому:
+    1. Загружаем все товары (или по категории)
+    2. Фильтруем и ранжируем на Python
+    """
+    if not search_query or not search_query.strip():
+        return [], 0
+    
+    tokens = tokenize_query(search_query)
+    if not tokens:
+        return [], 0
+    
+    normalized_query = normalize_text(search_query)
+    
+    # Загружаем товары из базы
+    if category:
+        query = "SELECT * FROM products WHERE category = ?"
+        all_products = conn.execute(query, (category,)).fetchall()
+    else:
+        query = "SELECT * FROM products"
+        all_products = conn.execute(query).fetchall()
+    
+    results = []
+    
+    for row in all_products:
+        product = dict(row)
+        name = product.get('name', '')
+        name_normalized = normalize_text(name)
+        cat_normalized = normalize_text(product.get('category', '') or '')
+        
+        # Подсчитываем релевантность
+        relevance = 0
+        
+        # Точное совпадение всей фразы
+        if normalized_query in name_normalized:
+            relevance = 100
+            # Бонус если название начинается с запроса
+            if name_normalized.startswith(normalized_query):
+                relevance = 110
+            # Бонус за точное совпадение слова
+            if normalized_query == name_normalized or f" {normalized_query} " in f" {name_normalized} ":
+                relevance = 120
+        else:
+            # Проверяем сколько токенов найдено
+            matches = sum(1 for t in tokens if t in name_normalized)
+            
+            if matches == len(tokens):
+                # Все токены найдены
+                relevance = 80
+            elif matches > 0:
+                # Часть токенов найдена
+                relevance = 30 + matches * 15
+            elif normalized_query in cat_normalized:
+                # Совпадение с категорией
+                relevance = 20
+        
+        if relevance > 0:
+            product['relevance'] = relevance
+            results.append(product)
+    
+    # Сортируем по релевантности, затем по длине названия (короткие выше)
+    results.sort(key=lambda x: (
+        -x.get('relevance', 0),
+        len(x.get('name', ''))
+    ))
+    
+    total = len(results)
+    return results[:limit], total
+
+
+def count_search_results(conn, search_query: str, category: str = None) -> int:
+    """Подсчёт результатов поиска"""
+    results, total = smart_search_products(conn, search_query, category, limit=10000)
+    return total
+
+
+# ============================================================================
 # ПАРСИНГ АТРИБУТОВ ТОВАРА
 # ============================================================================
 
@@ -231,64 +337,94 @@ def calculate_similarity_score(attrs1: ProductAttributes, attrs2: ProductAttribu
     """
     score = 0
     
-    # 1. Тип продукта (обязательно должен совпадать)
-    if not attrs1.product_type or not attrs2.product_type:
-        return 0
+    # Нормализуем названия
+    name1_norm = normalize_text(name1)
+    name2_norm = normalize_text(name2)
     
-    if attrs1.product_type == attrs2.product_type:
-        score += 30
-    elif stem_russian(attrs1.product_type) == stem_russian(attrs2.product_type):
-        score += 25  # Частичное совпадение через стемминг
-    else:
-        return 0  # Разные типы - не похожие товары
+    # Извлекаем слова (минимум 3 буквы)
+    words1 = set(re.findall(r'[а-яёa-z]{3,}', name1_norm))
+    words2 = set(re.findall(r'[а-яёa-z]{3,}', name2_norm))
+    words1 -= STOP_WORDS
+    words2 -= STOP_WORDS
+    
+    # Получаем первое значимое слово (обычно это тип продукта)
+    first_word1 = name1_norm.split()[0] if name1_norm else ""
+    first_word2 = name2_norm.split()[0] if name2_norm else ""
+    
+    # 1. Первое слово (тип продукта) - самый важный критерий
+    first_word_match = False
+    if first_word1 and first_word2:
+        if first_word1 == first_word2:
+            score += 35
+            first_word_match = True
+        elif stem_russian(first_word1) == stem_russian(first_word2):
+            score += 30
+            first_word_match = True
+        elif first_word1 in first_word2 or first_word2 in first_word1:
+            score += 25  # Одно слово содержит другое
+            first_word_match = True
+    
+    # Если первые слова совсем не совпадают, проверяем product_type
+    if not first_word_match and attrs1.product_type and attrs2.product_type:
+        if attrs1.product_type == attrs2.product_type:
+            score += 30
+            first_word_match = True
+        elif stem_russian(attrs1.product_type) == stem_russian(attrs2.product_type):
+            score += 25
+            first_word_match = True
+    
+    # Если нет совпадения по типу/первому слову - товары не похожи
+    if not first_word_match:
+        # Но даём шанс если много общих слов
+        common_words = words1 & words2
+        if len(common_words) >= 2:
+            score += 20  # Бонус за общие слова
+        else:
+            return 0
     
     # 2. Бренд (очень важно для сравнения цен!)
     if attrs1.brand and attrs2.brand:
         if attrs1.brand.lower() == attrs2.brand.lower():
-            score += 40  # Тот же бренд - большой бонус
+            score += 35  # Тот же бренд - большой бонус
         else:
             score += 5   # Разные бренды - минимальный бонус
     elif attrs1.brand or attrs2.brand:
         score += 3  # У одного есть бренд, у другого нет
+    else:
+        score += 10  # Оба без бренда - возможно базовые продукты
     
     # 3. Объём/вес (важно для корректного сравнения)
     if attrs1.volume_ml and attrs2.volume_ml:
         ratio = min(attrs1.volume_ml, attrs2.volume_ml) / max(attrs1.volume_ml, attrs2.volume_ml)
-        if ratio > 0.95:  # Почти одинаковый объём (±5%)
-            score += 15
-        elif ratio > 0.8:  # Близкий объём
-            score += 10
+        if ratio > 0.95:
+            score += 12
+        elif ratio > 0.8:
+            score += 8
         elif ratio > 0.5:
-            score += 5
+            score += 4
     elif attrs1.weight_g and attrs2.weight_g:
         ratio = min(attrs1.weight_g, attrs2.weight_g) / max(attrs1.weight_g, attrs2.weight_g)
         if ratio > 0.95:
-            score += 15
+            score += 12
         elif ratio > 0.8:
-            score += 10
+            score += 8
         elif ratio > 0.5:
-            score += 5
+            score += 4
     
     # 4. Жирность (для молочки)
     if attrs1.fat_percent and attrs2.fat_percent:
         if abs(attrs1.fat_percent - attrs2.fat_percent) < 0.5:
-            score += 10
+            score += 8
         elif abs(attrs1.fat_percent - attrs2.fat_percent) < 1.5:
-            score += 5
+            score += 4
     
     # 5. Пересечение слов в названии (fuzzy matching)
-    words1 = set(re.findall(r'[а-яёa-z]{3,}', name1.lower()))
-    words2 = set(re.findall(r'[а-яёa-z]{3,}', name2.lower()))
-    
-    words1 -= STOP_WORDS
-    words2 -= STOP_WORDS
-    
     if words1 and words2:
         intersection = len(words1 & words2)
         union = len(words1 | words2)
         if union > 0:
             jaccard = intersection / union
-            score += int(jaccard * 10)  # До 10 баллов за совпадение слов
+            score += int(jaccard * 15)  # До 15 баллов за совпадение слов
     
     return min(score, 100)
 
@@ -323,41 +459,61 @@ def get_similar_products_v2(store_id: str, product_name: str, product_id: str,
     # Парсим атрибуты исходного товара
     source_attrs = parse_product_attributes(product_name)
     
-    if not source_attrs.product_type:
-        conn.close()
-        return []
+    # Нормализуем название для поиска
+    source_name_normalized = normalize_text(product_name)
+    source_words = set(tokenize_query(product_name))
     
-    # Формируем поисковые запросы
-    search_terms = []
+    # Формируем поисковые термы
+    search_terms = set()
     
-    # 1. По типу продукта
+    # 1. Все слова из названия (минимум 3 буквы)
+    for word in source_words:
+        if len(word) >= 3:
+            search_terms.add(word)
+            # Добавляем стемм
+            stemmed = stem_russian(word)
+            if len(stemmed) >= 3:
+                search_terms.add(stemmed)
+    
+    # 2. Тип продукта
     if source_attrs.product_type:
-        stemmed = stem_russian(source_attrs.product_type)
-        search_terms.append(f"%{stemmed}%")
-        search_terms.append(f"%{source_attrs.product_type}%")
+        search_terms.add(source_attrs.product_type.lower())
+        stemmed = stem_russian(source_attrs.product_type.lower())
+        if len(stemmed) >= 3:
+            search_terms.add(stemmed)
     
-    # 2. По бренду
+    # 3. Бренд
     if source_attrs.brand:
-        search_terms.append(f"%{source_attrs.brand.lower()}%")
+        search_terms.add(source_attrs.brand.lower())
     
-    # Собираем кандидатов
+    # Если нет терминов для поиска - берём первое слово названия
+    if not search_terms:
+        first_word = source_name_normalized.split()[0] if source_name_normalized else ""
+        if len(first_word) >= 3:
+            search_terms.add(first_word)
+    
+    # Загружаем все товары и фильтруем на Python (SQLite LOWER не работает с кириллицей)
+    all_products = conn.execute("SELECT * FROM products").fetchall()
+    
     candidates = []
     seen_ids = {product_id}  # Исключаем текущий товар
     
-    for term in search_terms:
-        query = '''
-            SELECT * FROM products 
-            WHERE LOWER(name) LIKE ? AND product_id NOT IN ({})
-            LIMIT 50
-        '''.format(','.join(['?'] * len(seen_ids)))
+    for row in all_products:
+        if row['product_id'] in seen_ids:
+            continue
         
-        params = [term] + list(seen_ids)
-        rows = conn.execute(query, params).fetchall()
+        name_normalized = normalize_text(row['name'])
         
-        for row in rows:
-            if row['product_id'] not in seen_ids:
-                seen_ids.add(row['product_id'])
-                candidates.append(dict(row))
+        # Проверяем совпадение с любым поисковым термом
+        match_found = False
+        for term in search_terms:
+            if term in name_normalized:
+                match_found = True
+                break
+        
+        if match_found:
+            seen_ids.add(row['product_id'])
+            candidates.append(dict(row))
     
     conn.close()
     
@@ -528,49 +684,56 @@ def store_products(store_id):
                                active_store=store_id)
     
     # Параметры
-    search = request.args.get('search', '')
+    search = request.args.get('search', '').strip()
     category = request.args.get('category', '')
-    sort = request.args.get('sort', 'last_updated')
+    sort = request.args.get('sort', 'relevance' if search else 'last_updated')
     order = request.args.get('order', 'desc')
     page = int(request.args.get('page', 1))
     per_page = 50
     
-    # Запрос
-    query = "SELECT * FROM products WHERE 1=1"
-    params = []
-    
-    if search:
-        query += " AND name LIKE ?"
-        params.append(f"%{search}%")
-    
-    if category:
-        query += " AND category = ?"
-        params.append(category)
-    
-    valid_sorts = ['name', 'current_price', 'last_updated', 'category', 'min_price', 'max_price', 'rating']
-    if sort in valid_sorts:
-        query += f" ORDER BY {sort} {'DESC' if order == 'desc' else 'ASC'}"
-    
-    query += f" LIMIT {per_page} OFFSET {(page - 1) * per_page}"
-    
-    products = conn.execute(query, params).fetchall()
-    
+    # Получаем категории
     categories_rows = conn.execute(
         "SELECT DISTINCT category FROM products WHERE category IS NOT NULL AND category != '' ORDER BY category"
     ).fetchall()
     categories = [row['category'] for row in categories_rows]
     
-    count_query = "SELECT COUNT(*) FROM products WHERE 1=1"
-    count_params = []
+    # Если есть поисковый запрос - используем умный поиск
     if search:
-        count_query += " AND name LIKE ?"
-        count_params.append(f"%{search}%")
-    if category:
-        count_query += " AND category = ?"
-        count_params.append(category)
-    
-    total = conn.execute(count_query, count_params).fetchone()[0]
-    total_pages = (total + per_page - 1) // per_page
+        all_results, total = smart_search_products(conn, search, category, limit=500)
+        
+        # Пагинация результатов
+        start = (page - 1) * per_page
+        end = start + per_page
+        products = all_results[start:end]
+        total_pages = (total + per_page - 1) // per_page
+    else:
+        # Обычный запрос без поиска
+        query = "SELECT * FROM products WHERE 1=1"
+        params = []
+        
+        if category:
+            query += " AND category = ?"
+            params.append(category)
+        
+        valid_sorts = ['name', 'current_price', 'last_updated', 'category', 'min_price', 'max_price', 'rating']
+        if sort in valid_sorts:
+            query += f" ORDER BY {sort} {'DESC' if order == 'desc' else 'ASC'}"
+        else:
+            query += " ORDER BY last_updated DESC"
+        
+        query += f" LIMIT {per_page} OFFSET {(page - 1) * per_page}"
+        
+        products = [dict(row) for row in conn.execute(query, params).fetchall()]
+        
+        # Подсчёт общего количества
+        count_query = "SELECT COUNT(*) FROM products WHERE 1=1"
+        count_params = []
+        if category:
+            count_query += " AND category = ?"
+            count_params.append(category)
+        
+        total = conn.execute(count_query, count_params).fetchone()[0]
+        total_pages = (total + per_page - 1) // per_page
     
     conn.close()
     

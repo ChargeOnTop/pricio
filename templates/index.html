@@ -34,6 +34,92 @@
     .store-logo.pyaterochka { background: #e30613; }
     .store-logo.magnit { background: #e31e24; }
     
+    .search-form {
+        position: relative;
+        max-width: 400px;
+        flex: 1;
+    }
+    
+    .search-form input {
+        width: 100%;
+        padding: 0.75rem 2.5rem 0.75rem 2.5rem;
+        border: 2px solid var(--border);
+        border-radius: 25px;
+        font-size: 1rem;
+        font-family: inherit;
+        transition: all 0.2s;
+    }
+    
+    .search-form input:focus {
+        outline: none;
+        border-color: var(--primary);
+        box-shadow: 0 0 0 3px rgba(34, 197, 94, 0.15);
+    }
+    
+    .search-form .search-icon {
+        position: absolute;
+        left: 1rem;
+        top: 50%;
+        transform: translateY(-50%);
+        color: var(--text-light);
+        pointer-events: none;
+    }
+    
+    .search-form .clear-btn {
+        position: absolute;
+        right: 0.75rem;
+        top: 50%;
+        transform: translateY(-50%);
+        background: var(--border);
+        border: none;
+        width: 24px;
+        height: 24px;
+        border-radius: 50%;
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 0.75rem;
+        color: var(--text-light);
+        transition: all 0.2s;
+    }
+    
+    .search-form .clear-btn:hover {
+        background: var(--text-light);
+        color: white;
+    }
+    
+    .search-results-banner {
+        background: var(--bg-secondary);
+        border: 1px solid var(--primary-light);
+        border-radius: var(--radius);
+        padding: 0.75rem 1rem;
+        margin-bottom: 1rem;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        flex-wrap: wrap;
+        gap: 0.5rem;
+    }
+    
+    .search-results-banner .query {
+        font-weight: 600;
+        color: var(--primary-dark);
+    }
+    
+    .search-results-banner .clear-search {
+        color: var(--text-light);
+        text-decoration: none;
+        font-size: 0.875rem;
+        display: flex;
+        align-items: center;
+        gap: 0.25rem;
+    }
+    
+    .search-results-banner .clear-search:hover {
+        color: var(--primary);
+    }
+    
     .categories {
         display: flex;
         flex-wrap: wrap;
@@ -86,6 +172,12 @@
         line-height: 1.4;
     }
     
+    .product-card .product-name mark {
+        background: #fef08a;
+        padding: 0 2px;
+        border-radius: 2px;
+    }
+    
     .product-card .product-price {
         margin-top: auto;
     }
@@ -113,6 +205,29 @@
         font-size: 3rem;
         margin-bottom: 1rem;
     }
+    
+    .search-tips {
+        margin-top: 1rem;
+        text-align: left;
+        max-width: 400px;
+        margin-left: auto;
+        margin-right: auto;
+    }
+    
+    .search-tips h4 {
+        font-size: 0.875rem;
+        margin-bottom: 0.5rem;
+        color: var(--text);
+    }
+    
+    .search-tips ul {
+        font-size: 0.8rem;
+        padding-left: 1.25rem;
+    }
+    
+    .search-tips li {
+        margin-bottom: 0.25rem;
+    }
 </style>
 {% endblock %}
 
@@ -128,16 +243,28 @@
         </div>
     </div>
     
-    <div class="search-box">
-        <form action="/store/{{ store_id }}" method="get">
-            <input type="hidden" name="category" value="{{ current_category or '' }}">
-            <span class="search-icon">🔍</span>
-            <input type="text" name="search" class="search-input" placeholder="Поиск товаров..." value="{{ search_query or '' }}">
-        </form>
-    </div>
+    <form action="/store/{{ store_id }}" method="get" class="search-form">
+        {% if current_category %}
+        <input type="hidden" name="category" value="{{ current_category }}">
+        {% endif %}
+        <span class="search-icon">🔍</span>
+        <input type="text" name="search" placeholder="Поиск: молоко, сыр, Простоквашино..." value="{{ search_query or '' }}" autocomplete="off">
+        {% if search_query %}
+        <button type="button" class="clear-btn" onclick="clearSearch()">✕</button>
+        {% endif %}
+    </form>
 </div>
 
-{% if categories %}
+{% if search_query %}
+<div class="search-results-banner">
+    <span>Результаты поиска: <span class="query">«{{ search_query }}»</span> — найдено {{ total_products }} товаров</span>
+    <a href="/store/{{ store_id }}{% if current_category %}?category={{ current_category }}{% endif %}" class="clear-search">
+        ✕ Сбросить поиск
+    </a>
+</div>
+{% endif %}
+
+{% if categories and not search_query %}
 <div class="categories">
     <a href="/store/{{ store_id }}" class="category-btn {% if not current_category %}active{% endif %}">
         Все товары
@@ -158,16 +285,19 @@
 
 <div class="product-grid">
     {% for product in products %}
-    <a href="/store/{{ store_id }}/product/{{ product.product_id }}" class="product-card">
-        <div class="product-name">{{ product.name }}</div>
-        <div class="product-price">{{ "%.2f"|format(product.current_price) }} ₽</div>
-        {% if product.min_price and product.min_price < product.current_price %}
+    <a href="/store/{{ store_id }}/product/{{ product.product_id if product.product_id else product['product_id'] }}" class="product-card">
+        <div class="product-name">{{ product.name if product.name else product['name'] }}</div>
+        <div class="product-price">{{ "%.2f"|format(product.current_price if product.current_price else product['current_price']) }} ₽</div>
+        {% set min_p = product.min_price if product.min_price else product['min_price'] %}
+        {% set cur_p = product.current_price if product.current_price else product['current_price'] %}
+        {% if min_p and min_p < cur_p %}
         <div class="price-change price-down">
-            Мин. цена: {{ "%.2f"|format(product.min_price) }} ₽
+            Мин. цена: {{ "%.2f"|format(min_p) }} ₽
         </div>
         {% endif %}
         <div class="product-meta">
-            {% if product.category %}{{ product.category }}{% endif %}
+            {% set cat = product.category if product.category else product['category'] %}
+            {% if cat %}{{ cat }}{% endif %}
         </div>
     </a>
     {% endfor %}
@@ -197,9 +327,42 @@
 
 {% else %}
 <div class="empty-state">
-    <div class="empty-state-icon">📦</div>
+    <div class="empty-state-icon">🔍</div>
+    {% if search_query %}
+    <h3>По запросу «{{ search_query }}» ничего не найдено</h3>
+    <p>Попробуйте изменить запрос</p>
+    <div class="search-tips">
+        <h4>Советы по поиску:</h4>
+        <ul>
+            <li>Проверьте правильность написания</li>
+            <li>Используйте более общие слова</li>
+            <li>Попробуйте поискать по бренду или категории</li>
+        </ul>
+    </div>
+    <a href="/store/{{ store_id }}" class="btn btn-primary" style="margin-top: 1rem;">Показать все товары</a>
+    {% else %}
     <h3>Товары не найдены</h3>
-    <p>Попробуйте изменить параметры поиска</p>
+    <p>В этой категории пока нет товаров</p>
+    {% endif %}
 </div>
 {% endif %}
+{% endblock %}
+
+{% block extra_js %}
+<script>
+function clearSearch() {
+    const form = document.querySelector('.search-form');
+    const input = form.querySelector('input[name="search"]');
+    input.value = '';
+    form.submit();
+}
+
+// Автофокус на поле поиска при нажатии /
+document.addEventListener('keydown', function(e) {
+    if (e.key === '/' && document.activeElement.tagName !== 'INPUT') {
+        e.preventDefault();
+        document.querySelector('.search-form input[name="search"]').focus();
+    }
+});
+</script>
 {% endblock %}
