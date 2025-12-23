@@ -1,180 +1,149 @@
-<!DOCTYPE html>
-<html lang="ru">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Сравнение цен - Пятёрочка и Магнит</title>
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Rubik:wght@400;500;600;700&display=swap" rel="stylesheet">
-    <style>
-        :root {
-            --bg: #F5F5F5;
-            --white: #FFFFFF;
-            --text: #1A1A1A;
-            --text-secondary: #6B7280;
-        }
-        
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
-        
-        body {
-            font-family: 'Rubik', sans-serif;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            min-height: 100vh;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            padding: 20px;
-        }
-        
-        .container {
-            text-align: center;
-        }
-        
-        h1 {
-            color: white;
-            font-size: 2.5rem;
-            margin-bottom: 16px;
-            text-shadow: 0 2px 10px rgba(0,0,0,0.2);
-        }
-        
-        .subtitle {
-            color: rgba(255,255,255,0.8);
-            font-size: 1.1rem;
-            margin-bottom: 48px;
-        }
-        
-        .stores {
-            display: flex;
-            gap: 24px;
-            justify-content: center;
-            flex-wrap: wrap;
-        }
-        
-        .store-card {
-            background: var(--white);
-            border-radius: 24px;
-            padding: 40px;
-            width: 300px;
-            text-decoration: none;
-            color: var(--text);
-            transition: transform 0.3s, box-shadow 0.3s;
-            box-shadow: 0 10px 40px rgba(0,0,0,0.15);
-        }
-        
-        .store-card:hover {
-            transform: translateY(-8px);
-            box-shadow: 0 20px 60px rgba(0,0,0,0.25);
-        }
-        
-        .store-logo {
-            width: 80px;
-            height: 80px;
-            border-radius: 20px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            margin: 0 auto 24px;
-            font-size: 40px;
-            font-weight: 700;
-            color: white;
-        }
-        
-        .store-name {
-            font-size: 1.5rem;
-            font-weight: 700;
-            margin-bottom: 8px;
-        }
-        
-        .store-count {
-            font-size: 2.5rem;
-            font-weight: 700;
-            margin-bottom: 8px;
-        }
-        
-        .store-label {
-            color: var(--text-secondary);
-            font-size: 0.9rem;
-        }
-        
-        .store-status {
-            margin-top: 20px;
-            padding: 8px 16px;
-            border-radius: 20px;
-            font-size: 0.85rem;
-            font-weight: 500;
-        }
-        
-        .status-ready {
-            background: #E8F5E9;
-            color: #2E7D32;
-        }
-        
-        .status-empty {
-            background: #FFF3E0;
-            color: #EF6C00;
-        }
-        
-        footer {
-            margin-top: 48px;
-            color: rgba(255,255,255,0.6);
-            font-size: 0.85rem;
-        }
-    </style>
-</head>
-<body>
-    <div class="container">
-        <!-- User navigation -->
-        <div style="position: fixed; top: 20px; right: 20px; display: flex; gap: 12px; align-items: center;">
-            {% if current_user %}
-            <a href="/favorites" style="color: white; text-decoration: none; padding: 10px 20px; background: rgba(255,255,255,0.15); border-radius: 10px; backdrop-filter: blur(10px);">
-                ❤️ Избранное
-            </a>
-            <span style="color: rgba(255,255,255,0.8);">{{ current_user.username }}</span>
-            <a href="/logout" style="color: rgba(255,255,255,0.6); text-decoration: none;">Выйти</a>
-            {% else %}
-            <a href="/login" style="color: white; text-decoration: none; padding: 10px 20px; background: rgba(255,255,255,0.15); border-radius: 10px; backdrop-filter: blur(10px);">
-                Войти
-            </a>
-            <a href="/register" style="color: white; text-decoration: none; padding: 10px 20px; background: rgba(255,255,255,0.25); border-radius: 10px; backdrop-filter: blur(10px); font-weight: 500;">
-                Регистрация
-            </a>
-            {% endif %}
-        </div>
-        
-        <h1>🛒 Сравнение цен</h1>
-        <p class="subtitle">Мониторинг цен в магазинах Пятёрочка и Магнит</p>
-        
-        <div class="stores">
-            {% for store_id, store in stores.items() %}
-            <a href="/store/{{ store_id }}" class="store-card">
-                <div class="store-logo" style="background: {{ store.color }};">
-                    {% if store_id == '5ka' %}5{% else %}М{% endif %}
-                </div>
-                <div class="store-name">{{ store.name }}</div>
-                <div class="store-count" style="color: {{ store.color }};">{{ store.count }}</div>
-                <div class="store-label">товаров в базе</div>
-                <div class="store-status {% if store.count > 0 %}status-ready{% else %}status-empty{% endif %}">
-                    {% if store.count > 0 %}
-                    ✓ Данные загружены
-                    {% else %}
-                    ○ Запустите скрапер
-                    {% endif %}
-                </div>
-            </a>
-            {% endfor %}
-        </div>
-        
-        <footer>
-            <p>Данные собираются с сайтов 5ka.ru и magnit.ru</p>
-        </footer>
+{% extends "base.html" %}
+
+{% block title %}Главная{% endblock %}
+
+{% block extra_css %}
+<style>
+    .hero {
+        text-align: center;
+        padding: 3rem 1rem;
+        background: linear-gradient(135deg, var(--bg-secondary) 0%, #dcfce7 100%);
+        border-radius: var(--radius);
+        margin-bottom: 2rem;
+    }
+    
+    .hero-title {
+        font-size: 2.5rem;
+        font-weight: 700;
+        color: var(--text);
+        margin-bottom: 0.5rem;
+    }
+    
+    .hero-subtitle {
+        font-size: 1.125rem;
+        color: var(--text-light);
+        margin-bottom: 2rem;
+    }
+    
+    .store-cards {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+        gap: 1.5rem;
+        max-width: 700px;
+        margin: 0 auto;
+    }
+    
+    .store-card {
+        background: var(--bg);
+        border: 2px solid var(--border);
+        border-radius: 12px;
+        padding: 2rem;
+        text-align: center;
+        text-decoration: none;
+        color: inherit;
+        transition: all 0.3s;
+    }
+    
+    .store-card:hover {
+        border-color: var(--primary);
+        transform: translateY(-4px);
+        box-shadow: 0 12px 24px rgba(0,0,0,0.1);
+    }
+    
+    .store-card-icon {
+        width: 64px;
+        height: 64px;
+        border-radius: 12px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 2rem;
+        font-weight: 700;
+        color: white;
+        margin: 0 auto 1rem;
+    }
+    
+    .store-card-icon.pyaterochka {
+        background: linear-gradient(135deg, #e30613, #ff4444);
+    }
+    
+    .store-card-icon.magnit {
+        background: linear-gradient(135deg, #e31e24, #ff5555);
+    }
+    
+    .store-card-name {
+        font-size: 1.25rem;
+        font-weight: 600;
+        margin-bottom: 0.5rem;
+    }
+    
+    .store-card-count {
+        color: var(--text-light);
+        font-size: 0.875rem;
+    }
+    
+    .features {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+        gap: 1.5rem;
+        margin-top: 3rem;
+    }
+    
+    .feature {
+        text-align: center;
+        padding: 1.5rem;
+    }
+    
+    .feature-icon {
+        font-size: 2.5rem;
+        margin-bottom: 1rem;
+    }
+    
+    .feature-title {
+        font-weight: 600;
+        margin-bottom: 0.5rem;
+    }
+    
+    .feature-desc {
+        color: var(--text-light);
+        font-size: 0.875rem;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="hero">
+    <h1 class="hero-title">Сравнивайте цены легко</h1>
+    <p class="hero-subtitle">Находите лучшие цены в Пятёрочке и Магните</p>
+    
+    <div class="store-cards">
+        {% for store_id, store in stores.items() %}
+        <a href="/store/{{ store_id }}" class="store-card">
+            <div class="store-card-icon {{ 'pyaterochka' if store_id == '5ka' else 'magnit' }}">
+                {{ '5' if store_id == '5ka' else 'М' }}
+            </div>
+            <div class="store-card-name">{{ store.name }}</div>
+            <div class="store-card-count">{{ store.count }} товаров</div>
+        </a>
+        {% endfor %}
     </div>
-</body>
-</html>
+</div>
 
-
-
+<div class="features">
+    <div class="feature">
+        <div class="feature-icon">📊</div>
+        <div class="feature-title">Сравнение цен</div>
+        <div class="feature-desc">Сравнивайте цены на одинаковые товары в разных магазинах</div>
+    </div>
+    <div class="feature">
+        <div class="feature-icon">📉</div>
+        <div class="feature-title">История цен</div>
+        <div class="feature-desc">Отслеживайте изменения цен и находите лучшее время для покупки</div>
+    </div>
+    <div class="feature">
+        <div class="feature-icon">🔔</div>
+        <div class="feature-title">Уведомления</div>
+        <div class="feature-desc">Получайте уведомления о снижении цен в Telegram</div>
+    </div>
+</div>
+{% endblock %}

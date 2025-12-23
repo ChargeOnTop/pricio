@@ -1,951 +1,468 @@
-<!DOCTYPE html>
-<html lang="ru">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>{{ product.name }} - {{ store.name }}</title>
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Rubik:wght@400;500;600;700&display=swap" rel="stylesheet">
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-    <style>
-        :root {
-            --red: #E30613;
-            --red-dark: #C50510;
-            --green: #1DB954;
-            --green-dark: #18a348;
-            --yellow: #FFB800;
-            --orange: #FF6B35;
-            --bg: #F5F5F5;
-            --white: #FFFFFF;
-            --text: #1A1A1A;
-            --text-secondary: #6B7280;
-            --border: #E5E7EB;
-        }
-        
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
-        
-        body {
-            font-family: 'Rubik', sans-serif;
-            background: var(--bg);
-            color: var(--text);
-            min-height: 100vh;
-        }
-        
-        .header {
-            background: var(--white);
-            box-shadow: 0 2px 8px rgba(0,0,0,0.08);
-            padding: 16px 0;
-        }
-        
-        .header-inner {
-            max-width: 1000px;
-            margin: 0 auto;
-            padding: 0 20px;
-            display: flex;
-            align-items: center;
-            gap: 24px;
-        }
-        
-        .logo {
-            display: flex;
-            align-items: center;
-            gap: 8px;
-            text-decoration: none;
-        }
-        
-        .logo-icon {
-            width: 40px;
-            height: 40px;
-            background: linear-gradient(135deg, var(--green) 0%, #0f9d3f 100%);
-            border-radius: 10px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            color: white;
-            font-size: 22px;
-            font-weight: 700;
-        }
-        
-        .logo-text {
-            font-size: 18px;
-            font-weight: 700;
-            color: var(--text);
-        }
-        
-        .back-link {
-            color: var(--red);
-            text-decoration: none;
-            font-weight: 500;
-        }
-        
-        .back-link:hover {
-            text-decoration: underline;
-        }
-        
-        .container {
-            max-width: 1000px;
-            margin: 0 auto;
-            padding: 32px 20px;
-        }
-        
-        .product-card {
-            background: var(--white);
-            border-radius: 16px;
-            padding: 32px;
-            margin-bottom: 24px;
-        }
-        
-        .product-category {
-            display: inline-block;
-            background: var(--red);
-            color: white;
-            padding: 6px 14px;
-            border-radius: 8px;
-            font-size: 13px;
-            font-weight: 600;
-            margin-bottom: 16px;
-        }
-        
-        .product-name {
-            font-size: 28px;
-            font-weight: 700;
-            margin-bottom: 24px;
-            line-height: 1.3;
-        }
-        
-        .price-block {
-            display: flex;
-            align-items: center;
-            gap: 24px;
-            flex-wrap: wrap;
-            margin-bottom: 24px;
-        }
-        
-        .current-price {
-            font-size: 48px;
-            font-weight: 700;
-            color: var(--green);
-        }
-        
-        .current-price sup {
-            font-size: 24px;
-        }
-        
-        .price-stats {
-            display: flex;
-            gap: 16px;
-            flex-wrap: wrap;
-        }
-        
-        .price-stat {
-            text-align: center;
-            padding: 12px 20px;
-            background: var(--bg);
-            border-radius: 10px;
-        }
-        
-        .price-stat-value {
-            font-size: 20px;
-            font-weight: 700;
-        }
-        
-        .price-stat-label {
-            font-size: 12px;
-            color: var(--text-secondary);
-        }
-        
-        .price-stat.min .price-stat-value {
-            color: var(--green);
-        }
-        
-        .price-stat.max .price-stat-value {
-            color: var(--red);
-        }
-        
-        .price-stat.unit .price-stat-value {
-            color: var(--orange);
-            font-size: 16px;
-        }
-        
-        .meta-info {
-            display: flex;
-            gap: 32px;
-            color: var(--text-secondary);
-            font-size: 14px;
-            border-top: 1px solid var(--border);
-            padding-top: 16px;
-            flex-wrap: wrap;
-        }
-        
-        /* Блок сравнения цен */
-        .comparison-card {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            border-radius: 16px;
-            padding: 24px;
-            margin-bottom: 24px;
-            color: white;
-        }
-        
-        .comparison-title {
-            font-size: 18px;
-            font-weight: 700;
-            margin-bottom: 16px;
-            display: flex;
-            align-items: center;
-            gap: 8px;
-        }
-        
-        .comparison-content {
-            display: flex;
-            align-items: center;
-            gap: 24px;
-            flex-wrap: wrap;
-        }
-        
-        .comparison-item {
-            background: rgba(255,255,255,0.15);
-            border-radius: 12px;
-            padding: 16px 24px;
-            text-decoration: none;
-            color: white;
-            transition: all 0.2s;
-            flex: 1;
-            min-width: 200px;
-        }
-        
-        .comparison-item:hover {
-            background: rgba(255,255,255,0.25);
-            transform: translateY(-2px);
-        }
-        
-        .comparison-store {
-            font-size: 12px;
-            opacity: 0.9;
-            margin-bottom: 4px;
-        }
-        
-        .comparison-name {
-            font-size: 14px;
-            margin-bottom: 8px;
-            line-height: 1.3;
-        }
-        
-        .comparison-price {
-            font-size: 24px;
-            font-weight: 700;
-        }
-        
-        .comparison-savings {
-            background: var(--green);
-            padding: 8px 16px;
-            border-radius: 10px;
-            text-align: center;
-        }
-        
-        .savings-value {
-            font-size: 20px;
-            font-weight: 700;
-        }
-        
-        .savings-label {
-            font-size: 11px;
-            opacity: 0.9;
-        }
-        
-        .savings-negative {
-            background: var(--red);
-        }
-        
-        .chart-card {
-            background: var(--white);
-            border-radius: 16px;
-            padding: 32px;
-            margin-bottom: 24px;
-        }
-        
-        .chart-title {
-            font-size: 20px;
-            font-weight: 700;
-            margin-bottom: 24px;
-            display: flex;
-            align-items: center;
-            gap: 12px;
-        }
-        
-        .chart-title::before {
-            content: "📈";
-        }
-        
-        .chart-container {
-            position: relative;
-            height: 300px;
-        }
-        
-        .history-card {
-            background: var(--white);
-            border-radius: 16px;
-            padding: 32px;
-        }
-        
-        .history-title {
-            font-size: 20px;
-            font-weight: 700;
-            margin-bottom: 24px;
-        }
-        
-        .history-table {
-            width: 100%;
-            border-collapse: collapse;
-        }
-        
-        .history-table th,
-        .history-table td {
-            padding: 12px 16px;
-            text-align: left;
-            border-bottom: 1px solid var(--border);
-        }
-        
-        .history-table th {
-            background: var(--bg);
-            font-weight: 600;
-            font-size: 13px;
-            color: var(--text-secondary);
-        }
-        
-        .history-table tr:last-child td {
-            border-bottom: none;
-        }
-        
-        .price-up {
-            color: var(--red);
-        }
-        
-        .price-down {
-            color: var(--green);
-        }
-        
-        .no-history {
-            text-align: center;
-            padding: 40px;
-            color: var(--text-secondary);
-        }
-        
-        /* Похожие товары */
-        .similar-card {
-            background: var(--white);
-            border-radius: 16px;
-            padding: 24px;
-            margin-bottom: 24px;
-        }
-        
-        .similar-other {
-            border: 2px dashed var(--border);
-        }
-        
-        .similar-title {
-            font-size: 18px;
-            font-weight: 700;
-            margin-bottom: 16px;
-        }
-        
-        .similar-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
-            gap: 12px;
-        }
-        
-        .similar-item {
-            background: var(--bg);
-            border-radius: 12px;
-            padding: 16px;
-            text-decoration: none;
-            color: var(--text);
-            transition: all 0.2s;
-            border: 2px solid transparent;
-            position: relative;
-        }
-        
-        .similar-item:hover {
-            border-color: var(--green);
-            transform: translateY(-2px);
-        }
-        
-        .similar-item.exact-match {
-            border-color: var(--green);
-            background: linear-gradient(135deg, rgba(29, 185, 84, 0.1) 0%, rgba(29, 185, 84, 0.05) 100%);
-        }
-        
-        .match-badge {
-            position: absolute;
-            top: -8px;
-            right: -8px;
-            background: var(--green);
-            color: white;
-            font-size: 10px;
-            font-weight: 600;
-            padding: 4px 8px;
-            border-radius: 6px;
-        }
-        
-        .match-badge.partial {
-            background: var(--orange);
-        }
-        
-        .similar-name {
-            font-size: 13px;
-            line-height: 1.3;
-            margin-bottom: 8px;
-            color: var(--text);
-        }
-        
-        .similar-price {
-            font-size: 18px;
-            font-weight: 700;
-            color: var(--green);
-            margin-bottom: 4px;
-        }
-        
-        .similar-diff {
-            font-size: 12px;
-            font-weight: 600;
-        }
-        
-        .similar-diff.cheaper {
-            color: var(--green);
-        }
-        
-        .similar-diff.expensive {
-            color: var(--red);
-        }
-        
-        .similar-unit-price {
-            font-size: 11px;
-            color: var(--text-secondary);
-            margin-top: 4px;
-        }
-        
-        .similar-score {
-            font-size: 10px;
-            color: var(--text-secondary);
-            margin-top: 4px;
-        }
+{% extends "base.html" %}
 
-        /* Атрибуты товара */
-        .product-attrs {
-            display: flex;
-            gap: 12px;
-            flex-wrap: wrap;
-            margin-top: 16px;
-            padding-top: 16px;
-            border-top: 1px solid var(--border);
-        }
-        
-        .attr-tag {
-            background: var(--bg);
-            padding: 6px 12px;
-            border-radius: 6px;
-            font-size: 13px;
-            color: var(--text-secondary);
-        }
-        
-        .attr-tag strong {
-            color: var(--text);
-        }
-        
-        /* User navigation */
-        .user-link {
-            color: var(--text-secondary);
-            text-decoration: none;
-            font-size: 14px;
-            font-weight: 500;
-            transition: color 0.2s;
-        }
-        
-        .user-link:hover {
-            color: var(--green);
-        }
-        
-        .register-link {
-            background: var(--green);
-            color: white !important;
-            padding: 8px 16px;
-            border-radius: 8px;
-        }
-        
-        .register-link:hover {
-            background: var(--green-dark);
-        }
-        
-        .logout-link:hover {
-            color: var(--red);
-        }
-        
-        /* Action buttons */
-        .product-actions {
-            display: flex;
-            gap: 12px;
-            margin-top: 24px;
-            padding-top: 24px;
-            border-top: 1px solid var(--border);
-        }
-        
-        .btn-action {
-            padding: 14px 24px;
-            border-radius: 12px;
-            font-family: inherit;
-            font-size: 15px;
-            font-weight: 600;
-            cursor: pointer;
-            transition: all 0.2s;
-            display: flex;
-            align-items: center;
-            gap: 8px;
-            border: 2px solid var(--border);
-            background: transparent;
-            color: var(--text);
-        }
-        
-        .btn-action:hover {
-            transform: translateY(-2px);
-        }
-        
-        .btn-favorite {
-            border-color: #E91E63;
-        }
-        
-        .btn-favorite:hover {
-            background: rgba(233, 30, 99, 0.1);
-        }
-        
-        .btn-favorite.active {
-            background: #E91E63;
-            border-color: #E91E63;
-            color: white;
-        }
-        
-        .btn-alert {
-            border-color: var(--yellow);
-        }
-        
-        .btn-alert:hover {
-            background: rgba(255, 184, 0, 0.1);
-        }
-        
-        .btn-alert.active {
-            background: var(--yellow);
-            border-color: var(--yellow);
-            color: var(--text);
-        }
-        
-        .btn-login-prompt {
-            border-color: var(--green);
-            color: var(--green);
-        }
-        
-        .btn-login-prompt:hover {
-            background: rgba(29, 185, 84, 0.1);
-        }
-    </style>
-</head>
-<body>
-    <header class="header">
-        <div class="header-inner">
-            <a href="/store/{{ store_id }}" class="logo">
-                <div class="logo-icon" style="background: {{ store.color if store else '#1DB954' }};">
-                    {% if store_id == 'magnit' %}М{% else %}5{% endif %}
-                </div>
-                <span class="logo-text">{{ store.name if store else 'Пятёрочка' }}</span>
-            </a>
-            <a href="/store/{{ store_id }}" class="back-link">← Назад к каталогу</a>
-            
-            <div style="margin-left: auto; display: flex; align-items: center; gap: 16px;">
-                {% if current_user %}
-                <a href="/favorites" class="user-link">❤️ Избранное</a>
-                <span style="color: var(--text-secondary);">{{ current_user.username }}</span>
-                <a href="/logout" class="user-link logout-link">Выйти</a>
-                {% else %}
-                <a href="/login" class="user-link">Войти</a>
-                <a href="/register" class="user-link register-link">Регистрация</a>
-                {% endif %}
-            </div>
-        </div>
-    </header>
+{% block title %}{{ product.name }}{% endblock %}
+
+{% block extra_css %}
+<style>
+    .breadcrumb {
+        font-size: 0.875rem;
+        color: var(--text-light);
+        margin-bottom: 1rem;
+    }
     
-    <main class="container">
-        <div class="product-card">
-            {% if product.category %}
-            <span class="product-category">{{ product.category }}</span>
-            {% endif %}
-            
-            <h1 class="product-name">{{ product.name }}</h1>
-            
-            <div class="price-block">
-                {% set price_int = product.current_price|int %}
-                {% set price_dec = ((product.current_price - price_int) * 100)|int %}
-                <span class="current-price">{{ price_int }}<sup>{{ '%02d'|format(price_dec) }}</sup>₽</span>
-                
-                <div class="price-stats">
-                    <div class="price-stat min">
-                        <div class="price-stat-value">{{ "%.2f"|format(product.min_price) }}₽</div>
-                        <div class="price-stat-label">Мин. цена</div>
-                    </div>
-                    <div class="price-stat max">
-                        <div class="price-stat-value">{{ "%.2f"|format(product.max_price) }}₽</div>
-                        <div class="price-stat-label">Макс. цена</div>
-                    </div>
-                    {% if price_per_unit %}
-                    <div class="price-stat unit">
-                        <div class="price-stat-value">{{ price_per_unit.display }}</div>
-                        <div class="price-stat-label">Цена за {{ price_per_unit.unit }}</div>
-                    </div>
-                    {% endif %}
-                </div>
-            </div>
-            
-            <div class="meta-info">
-                <span>🆔 ID: {{ product.product_id }}</span>
-                <span>📅 Первое появление: {{ product.first_seen[:10] if product.first_seen else 'N/A' }}</span>
-                <span>🔄 Обновлено: {{ product.last_updated[:10] if product.last_updated else 'N/A' }}</span>
-            </div>
-            
-            {% if product_attrs %}
-            <div class="product-attrs">
-                {% if product_attrs.brand %}
-                <span class="attr-tag">🏷️ <strong>{{ product_attrs.brand }}</strong></span>
-                {% endif %}
-                {% if product_attrs.product_type %}
-                <span class="attr-tag">📦 {{ product_attrs.product_type }}</span>
-                {% endif %}
-                {% if product_attrs.volume_ml %}
-                <span class="attr-tag">🥤 {{ product_attrs.volume_ml|int if product_attrs.volume_ml >= 1000 else product_attrs.volume_ml|int }} {{ 'л' if product_attrs.volume_ml >= 1000 else 'мл' }}</span>
-                {% endif %}
-                {% if product_attrs.weight_g %}
-                <span class="attr-tag">⚖️ {{ (product_attrs.weight_g / 1000)|round(1) if product_attrs.weight_g >= 1000 else product_attrs.weight_g|int }} {{ 'кг' if product_attrs.weight_g >= 1000 else 'г' }}</span>
-                {% endif %}
-                {% if product_attrs.fat_percent %}
-                <span class="attr-tag">🥛 {{ product_attrs.fat_percent }}%</span>
-                {% endif %}
-            </div>
-            {% endif %}
-            
-            <!-- Кнопки действий -->
-            <div class="product-actions">
-                {% if current_user %}
-                <button id="btn-favorite" class="btn-action btn-favorite" type="button">
-                    <span id="fav-icon">🤍</span>
-                    <span id="fav-text">В избранное</span>
-                </button>
-                <button id="btn-alert" class="btn-action btn-alert" type="button">
-                    <span id="alert-icon">🔔</span>
-                    <span id="alert-text">Следить за ценой</span>
-                </button>
-                {% else %}
-                <a href="/login?next={{ request.url }}" class="btn-action btn-login-prompt">
-                    🔐 Войдите, чтобы отслеживать цены
-                </a>
-                {% endif %}
-            </div>
+    .breadcrumb a {
+        color: var(--text-light);
+        text-decoration: none;
+    }
+    
+    .breadcrumb a:hover {
+        color: var(--primary);
+    }
+    
+    .product-header {
+        display: grid;
+        grid-template-columns: 1fr auto;
+        gap: 2rem;
+        align-items: start;
+        margin-bottom: 2rem;
+    }
+    
+    @media (max-width: 768px) {
+        .product-header {
+            grid-template-columns: 1fr;
+        }
+    }
+    
+    .product-title {
+        font-size: 1.5rem;
+        font-weight: 700;
+        margin-bottom: 0.5rem;
+    }
+    
+    .product-category {
+        color: var(--text-light);
+        font-size: 0.875rem;
+    }
+    
+    .price-card {
+        background: var(--bg);
+        border: 2px solid var(--primary);
+        border-radius: 12px;
+        padding: 1.5rem;
+        text-align: center;
+        min-width: 200px;
+    }
+    
+    .current-price {
+        font-size: 2.5rem;
+        font-weight: 700;
+        color: var(--primary-dark);
+    }
+    
+    .current-price small {
+        font-size: 1.25rem;
+        font-weight: 400;
+    }
+    
+    .price-range {
+        display: flex;
+        justify-content: center;
+        gap: 1.5rem;
+        margin-top: 0.75rem;
+        font-size: 0.875rem;
+        color: var(--text-light);
+    }
+    
+    .price-min { color: #16a34a; }
+    .price-max { color: #dc2626; }
+    
+    .action-buttons {
+        display: flex;
+        gap: 0.5rem;
+        margin-top: 1rem;
+    }
+    
+    .action-buttons .btn {
+        flex: 1;
+    }
+    
+    .btn-favorite.active {
+        background: #fef2f2;
+        border-color: #fecaca;
+        color: #dc2626;
+    }
+    
+    .btn-alert.active {
+        background: #dcfce7;
+        border-color: #bbf7d0;
+        color: #16a34a;
+    }
+    
+    .section-grid {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 1.5rem;
+    }
+    
+    @media (max-width: 900px) {
+        .section-grid {
+            grid-template-columns: 1fr;
+        }
+    }
+    
+    .chart-container {
+        height: 250px;
+    }
+    
+    .history-table {
+        width: 100%;
+        border-collapse: collapse;
+        font-size: 0.875rem;
+    }
+    
+    .history-table th,
+    .history-table td {
+        padding: 0.75rem;
+        text-align: left;
+        border-bottom: 1px solid var(--border);
+    }
+    
+    .history-table th {
+        font-weight: 600;
+        color: var(--text-light);
+    }
+    
+    .similar-item {
+        display: flex;
+        align-items: center;
+        gap: 1rem;
+        padding: 0.75rem;
+        border-radius: var(--radius);
+        text-decoration: none;
+        color: inherit;
+        transition: all 0.2s;
+    }
+    
+    .similar-item:hover {
+        background: var(--bg-secondary);
+    }
+    
+    .similar-info {
+        flex: 1;
+        min-width: 0;
+    }
+    
+    .similar-name {
+        font-weight: 500;
+        font-size: 0.875rem;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+    }
+    
+    .similar-meta {
+        font-size: 0.75rem;
+        color: var(--text-light);
+    }
+    
+    .similar-price {
+        font-weight: 600;
+        white-space: nowrap;
+    }
+    
+    .price-diff {
+        font-size: 0.75rem;
+        margin-top: 0.125rem;
+    }
+    
+    .price-diff.cheaper { color: #16a34a; }
+    .price-diff.expensive { color: #dc2626; }
+    
+    .compare-card {
+        background: linear-gradient(135deg, var(--bg-secondary), #dcfce7);
+        border: 1px solid #bbf7d0;
+    }
+    
+    .compare-store {
+        display: flex;
+        align-items: center;
+        gap: 0.75rem;
+        padding: 1rem;
+        background: var(--bg);
+        border-radius: var(--radius);
+        margin-top: 1rem;
+        text-decoration: none;
+        color: inherit;
+    }
+    
+    .compare-store:hover {
+        box-shadow: var(--shadow);
+    }
+    
+    .compare-icon {
+        width: 40px;
+        height: 40px;
+        border-radius: 8px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-weight: 700;
+        color: white;
+    }
+    
+    .compare-icon.magnit { background: #e31e24; }
+    .compare-icon.pyaterochka { background: #e30613; }
+    
+    .attrs-grid {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 0.5rem;
+        margin-top: 1rem;
+    }
+    
+    .attr-tag {
+        padding: 0.375rem 0.75rem;
+        background: var(--bg-secondary);
+        border-radius: 20px;
+        font-size: 0.8rem;
+        color: var(--text-light);
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="breadcrumb">
+    <a href="/">Главная</a> / 
+    <a href="/store/{{ store_id }}">{{ store_name }}</a> / 
+    {{ product.name[:50] }}...
+</div>
+
+<div class="product-header">
+    <div>
+        <h1 class="product-title">{{ product.name }}</h1>
+        <div class="product-category">
+            {% if product.category %}{{ product.category }}{% endif %}
+            {% if product.brand %} • {{ product.brand }}{% endif %}
         </div>
         
-        <!-- Блок сравнения цен с другим магазином -->
-        {% if best_match %}
-        <div class="comparison-card">
-            <h2 class="comparison-title">💰 Сравнение цен</h2>
-            <div class="comparison-content">
-                <a href="/store/{{ other_store_id }}/product/{{ best_match.product.product_id }}" class="comparison-item">
-                    <div class="comparison-store">{{ other_store.name }}</div>
-                    <div class="comparison-name">{{ best_match.product.name[:50] }}{% if best_match.product.name|length > 50 %}...{% endif %}</div>
-                    <div class="comparison-price">{{ "%.2f"|format(best_match.product.current_price) }} ₽</div>
-                </a>
-                
-                <div class="comparison-savings {% if best_match.savings < 0 %}savings-negative{% endif %}">
-                    {% if best_match.savings > 0 %}
-                    <div class="savings-value">-{{ "%.0f"|format(best_match.savings) }} ₽</div>
-                    <div class="savings-label">дешевле в {{ other_store.name }} ({{ "%.0f"|format(best_match.savings_percent) }}%)</div>
-                    {% elif best_match.savings < 0 %}
-                    <div class="savings-value">+{{ "%.0f"|format(-best_match.savings) }} ₽</div>
-                    <div class="savings-label">дороже в {{ other_store.name }}</div>
-                    {% else %}
-                    <div class="savings-value">= цена</div>
-                    <div class="savings-label">одинаковая цена</div>
-                    {% endif %}
-                </div>
-            </div>
+        {% if product.weight_g or product.volume_ml %}
+        <div class="attrs-grid">
+            {% if product.weight_g %}<span class="attr-tag">⚖️ {{ product.weight_g }} г</span>{% endif %}
+            {% if product.volume_ml %}<span class="attr-tag">💧 {{ product.volume_ml }} мл</span>{% endif %}
+            {% if product.product_type %}<span class="attr-tag">📦 {{ product.product_type }}</span>{% endif %}
         </div>
         {% endif %}
+    </div>
+    
+    <div class="price-card">
+        <div class="current-price">{{ "%.0f"|format(product.current_price) }}<small>.{{ "%02d"|format((product.current_price * 100) % 100) }} ₽</small></div>
+        <div class="price-range">
+            <span class="price-min">↓ {{ "%.2f"|format(product.min_price) }} ₽</span>
+            <span class="price-max">↑ {{ "%.2f"|format(product.max_price) }} ₽</span>
+        </div>
         
-        {% if history|length > 1 %}
-        <div class="chart-card">
-            <h2 class="chart-title">Динамика цены</h2>
-            <div class="chart-container">
-                <canvas id="priceChart"></canvas>
-            </div>
+        {% if user %}
+        <div class="action-buttons">
+            <button id="btn-favorite" class="btn btn-secondary btn-favorite {% if is_favorite %}active{% endif %}" onclick="toggleFavorite()">
+                <span id="fav-icon">{{ '❤️' if is_favorite else '🤍' }}</span>
+                <span id="fav-text">{{ 'В избранном' if is_favorite else 'В избранное' }}</span>
+            </button>
+            <button id="btn-alert" class="btn btn-secondary btn-alert {% if has_alert %}active{% endif %}" onclick="toggleAlert()">
+                <span id="alert-icon">{{ '🔔' if has_alert else '🔕' }}</span>
+                <span id="alert-text">{{ 'Отслеживается' if has_alert else 'Следить' }}</span>
+            </button>
+        </div>
+        {% else %}
+        <div class="action-buttons">
+            <a href="/login" class="btn btn-secondary">Войдите для отслеживания</a>
         </div>
         {% endif %}
-        
-        <!-- Похожие товары из этого магазина -->
-        {% if similar_same_store %}
-        <div class="similar-card">
-            <h2 class="similar-title">🔄 Похожие товары в {{ store.name }}</h2>
-            <div class="similar-grid">
-                {% for item in similar_same_store %}
-                <a href="/store/{{ store_id }}/product/{{ item.product_id }}" class="similar-item {% if item.is_exact_match %}exact-match{% endif %}">
-                    {% if item.similarity_score >= 70 %}
-                    <span class="match-badge">✓ Аналог</span>
-                    {% elif item.similarity_score >= 50 %}
-                    <span class="match-badge partial">Похожий</span>
-                    {% endif %}
-                    
-                    <div class="similar-name">{{ item.name[:45] }}{% if item.name|length > 45 %}...{% endif %}</div>
+    </div>
+</div>
+
+<div class="section-grid">
+    <!-- Price History Chart -->
+    <div class="card">
+        <h2 class="card-title">📈 История цен</h2>
+        <div class="chart-container">
+            <canvas id="priceChart"></canvas>
+        </div>
+    </div>
+    
+    <!-- Compare with other store -->
+    <div class="card compare-card">
+        <h2 class="card-title">💰 Сравнение цен</h2>
+        {% if comparison %}
+        <p style="color: var(--text-light); font-size: 0.875rem;">
+            Похожий товар в {{ 'Магните' if store_id == '5ka' else 'Пятёрочке' }}:
+        </p>
+        <a href="/store/{{ comparison.store_id }}/product/{{ comparison.product_id }}" class="compare-store">
+            <div class="compare-icon {{ 'magnit' if comparison.store_id == 'magnit' else 'pyaterochka' }}">
+                {{ 'М' if comparison.store_id == 'magnit' else '5' }}
+            </div>
+            <div class="similar-info">
+                <div class="similar-name">{{ comparison.name }}</div>
+                <div class="similar-meta">{{ comparison.store_name }}</div>
+            </div>
+            <div>
+                <div class="similar-price">{{ "%.2f"|format(comparison.current_price) }} ₽</div>
+                {% set diff = comparison.current_price - product.current_price %}
+                <div class="price-diff {{ 'cheaper' if diff < 0 else 'expensive' }}">
+                    {{ '+' if diff > 0 else '' }}{{ "%.0f"|format(diff) }} ₽
+                </div>
+            </div>
+        </a>
+        {% else %}
+        <p style="color: var(--text-light);">Похожий товар не найден в другом магазине</p>
+        {% endif %}
+    </div>
+</div>
+
+<div class="section-grid" style="margin-top: 1.5rem;">
+    <!-- Similar Products -->
+    <div class="card">
+        <h2 class="card-title">🔄 Похожие товары</h2>
+        {% if similar_products %}
+        <div>
+            {% for item in similar_products[:5] %}
+            <a href="/store/{{ store_id }}/product/{{ item.product_id }}" class="similar-item">
+                <div class="similar-info">
+                    <div class="similar-name">{{ item.name }}</div>
+                    <div class="similar-meta">
+                        {% if item.match_score %}Совпадение: {{ item.match_score }}%{% endif %}
+                    </div>
+                </div>
+                <div>
                     <div class="similar-price">{{ "%.2f"|format(item.current_price) }} ₽</div>
-                    
-                    {% if item.price_diff and item.price_diff != 0 %}
-                    <div class="similar-diff {% if item.is_cheaper %}cheaper{% else %}expensive{% endif %}">
-                        {% if item.is_cheaper %}
-                        ↓ дешевле на {{ "%.0f"|format(-item.price_diff) }}₽
-                        {% else %}
-                        ↑ дороже на {{ "%.0f"|format(item.price_diff) }}₽
-                        {% endif %}
+                    {% set diff = item.current_price - product.current_price %}
+                    {% if diff != 0 %}
+                    <div class="price-diff {{ 'cheaper' if diff < 0 else 'expensive' }}">
+                        {{ '+' if diff > 0 else '' }}{{ "%.0f"|format(diff) }} ₽
                     </div>
                     {% endif %}
-                    
-                    {% if item.price_per_unit %}
-                    <div class="similar-unit-price">{{ item.price_per_unit.display }}</div>
-                    {% endif %}
-                </a>
-                {% endfor %}
-            </div>
+                </div>
+            </a>
+            {% endfor %}
         </div>
+        {% else %}
+        <p style="color: var(--text-light);">Похожие товары не найдены</p>
         {% endif %}
-        
-        <!-- Похожие товары из другого магазина -->
-        {% if similar_other_store %}
-        <div class="similar-card similar-other">
-            <h2 class="similar-title">🏪 Сравните цены в {{ other_store.name }}</h2>
-            <div class="similar-grid">
-                {% for item in similar_other_store %}
-                <a href="/store/{{ other_store_id }}/product/{{ item.product_id }}" class="similar-item {% if item.is_exact_match %}exact-match{% endif %}">
-                    {% if item.similarity_score >= 70 %}
-                    <span class="match-badge">✓ Аналог</span>
-                    {% elif item.similarity_score >= 50 %}
-                    <span class="match-badge partial">Похожий</span>
-                    {% endif %}
-                    
-                    <div class="similar-name">{{ item.name[:45] }}{% if item.name|length > 45 %}...{% endif %}</div>
-                    <div class="similar-price" style="color: {{ other_store.color }};">{{ "%.2f"|format(item.current_price) }} ₽</div>
-                    
-                    {% if item.price_diff and item.price_diff != 0 %}
-                    <div class="similar-diff {% if item.is_cheaper %}cheaper{% else %}expensive{% endif %}">
-                        {% if item.is_cheaper %}
-                        💰 дешевле на {{ "%.0f"|format(-item.price_diff) }}₽
+    </div>
+    
+    <!-- Price History Table -->
+    <div class="card">
+        <h2 class="card-title">📋 История изменений</h2>
+        {% if price_history %}
+        <table class="history-table">
+            <thead>
+                <tr>
+                    <th>Дата</th>
+                    <th>Цена</th>
+                    <th>Изменение</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for record in price_history[:10] %}
+                <tr>
+                    <td>{{ record.recorded_at[:16] if record.recorded_at else '—' }}</td>
+                    <td><strong>{{ "%.2f"|format(record.price) }} ₽</strong></td>
+                    <td>
+                        {% if record.old_price %}
+                            {% set change = record.price - record.old_price %}
+                            <span class="{{ 'price-diff cheaper' if change < 0 else 'price-diff expensive' }}">
+                                {{ '+' if change > 0 else '' }}{{ "%.2f"|format(change) }} ₽
+                            </span>
                         {% else %}
-                        дороже на {{ "%.0f"|format(item.price_diff) }}₽
+                            <span style="color: var(--text-light);">Первая запись</span>
                         {% endif %}
-                    </div>
-                    {% endif %}
-                    
-                    {% if item.price_per_unit %}
-                    <div class="similar-unit-price">{{ item.price_per_unit.display }}</div>
-                    {% endif %}
-                </a>
+                    </td>
+                </tr>
                 {% endfor %}
-            </div>
-        </div>
+            </tbody>
+        </table>
+        {% else %}
+        <p style="color: var(--text-light);">История цен пока недоступна</p>
         {% endif %}
-        
-        <div class="history-card">
-            <h2 class="history-title">📋 История изменений цены</h2>
-            
-            {% if history %}
-            <table class="history-table">
-                <thead>
-                    <tr>
-                        <th>Дата</th>
-                        <th>Цена</th>
-                        <th>Изменение</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    {% for i in range(history|length - 1, -1, -1) %}
-                    <tr>
-                        <td>{{ history[i].recorded_at[:16] if history[i].recorded_at else '' }}</td>
-                        <td><strong>{{ "%.2f"|format(history[i].price) }} ₽</strong></td>
-                        <td>
-                            {% if i > 0 %}
-                                {% set diff = history[i].price - history[i-1].price %}
-                                {% if diff > 0 %}
-                                <span class="price-up">↑ +{{ "%.2f"|format(diff) }}₽</span>
-                                {% elif diff < 0 %}
-                                <span class="price-down">↓ {{ "%.2f"|format(diff) }}₽</span>
-                                {% else %}
-                                <span>—</span>
-                                {% endif %}
-                            {% else %}
-                            <span style="color: var(--text-secondary);">Первая запись</span>
-                            {% endif %}
-                        </td>
-                    </tr>
-                    {% endfor %}
-                </tbody>
-            </table>
-            {% else %}
-            <div class="no-history">
-                <p>История цен пока недоступна</p>
-            </div>
-            {% endif %}
-        </div>
-    </main>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+const storeId = '{{ store_id }}';
+const productId = '{{ product.product_id }}';
+
+// Price Chart
+const ctx = document.getElementById('priceChart').getContext('2d');
+const priceData = {{ price_history_json|safe if price_history_json else '[]' }};
+
+new Chart(ctx, {
+    type: 'line',
+    data: {
+        labels: priceData.map(p => p.date),
+        datasets: [{
+            label: 'Цена',
+            data: priceData.map(p => p.price),
+            borderColor: '#22c55e',
+            backgroundColor: 'rgba(34, 197, 94, 0.1)',
+            fill: true,
+            tension: 0.3,
+            pointRadius: 4,
+            pointBackgroundColor: '#22c55e'
+        }]
+    },
+    options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: {
+            legend: { display: false }
+        },
+        scales: {
+            y: {
+                beginAtZero: false,
+                ticks: {
+                    callback: value => value + ' ₽'
+                }
+            }
+        }
+    }
+});
+
+// Favorite toggle
+async function toggleFavorite() {
+    const btn = document.getElementById('btn-favorite');
+    const icon = document.getElementById('fav-icon');
+    const text = document.getElementById('fav-text');
+    const isActive = btn.classList.contains('active');
     
-    {% if history|length > 1 %}
-    <script>
-        const ctx = document.getElementById('priceChart').getContext('2d');
-        
-        const data = {
-            labels: [{% for h in history %}'{{ h.recorded_at[:10] if h.recorded_at else "" }}'{% if not loop.last %},{% endif %}{% endfor %}],
-            datasets: [{
-                label: 'Цена (₽)',
-                data: [{% for h in history %}{{ h.price }}{% if not loop.last %},{% endif %}{% endfor %}],
-                borderColor: '{{ store.color if store else "#E30613" }}',
-                backgroundColor: '{{ store.color if store else "#E30613" }}22',
-                borderWidth: 3,
-                fill: true,
-                tension: 0.3,
-                pointBackgroundColor: '{{ store.color if store else "#E30613" }}',
-                pointRadius: 6,
-                pointHoverRadius: 8
-            }]
-        };
-        
-        new Chart(ctx, {
-            type: 'line',
-            data: data,
-            options: {
-                responsive: true,
-                maintainAspectRatio: false,
-                plugins: {
-                    legend: {
-                        display: false
-                    }
-                },
-                scales: {
-                    y: {
-                        beginAtZero: false,
-                        grid: {
-                            color: '#E5E7EB'
-                        }
-                    },
-                    x: {
-                        grid: {
-                            display: false
-                        }
-                    }
-                }
-            }
-        });
-    </script>
-    {% endif %}
+    const response = await fetch(`/api/favorites/${storeId}/${productId}`, {
+        method: isActive ? 'DELETE' : 'POST'
+    });
     
-    {% if current_user %}
-    <script>
-        const storeId = '{{ store_id }}';
-        const productId = '{{ product.product_id }}';
-        
-        // Проверяем статус при загрузке
-        async function checkStatus() {
-            try {
-                const [favResp, alertResp] = await Promise.all([
-                    fetch(`/api/favorites/check/${storeId}/${productId}`),
-                    fetch(`/api/alerts/check/${storeId}/${productId}`)
-                ]);
-                
-                const favData = await favResp.json();
-                const alertData = await alertResp.json();
-                
-                updateFavoriteUI(favData.is_favorite);
-                updateAlertUI(alertData.has_alert);
-            } catch (e) {
-                console.error('Error checking status:', e);
-            }
-        }
-        
-        function updateFavoriteUI(isFavorite) {
-            const btn = document.getElementById('btn-favorite');
-            const icon = document.getElementById('fav-icon');
-            const text = document.getElementById('fav-text');
-            
-            if (isFavorite) {
-                btn.classList.add('active');
-                icon.textContent = '❤️';
-                text.textContent = 'В избранном';
-            } else {
-                btn.classList.remove('active');
-                icon.textContent = '🤍';
-                text.textContent = 'В избранное';
-            }
-        }
-        
-        function updateAlertUI(hasAlert) {
-            const btn = document.getElementById('btn-alert');
-            const icon = document.getElementById('alert-icon');
-            const text = document.getElementById('alert-text');
-            
-            if (hasAlert) {
-                btn.classList.add('active');
-                icon.textContent = '🔔';
-                text.textContent = 'Отслеживается';
-            } else {
-                btn.classList.remove('active');
-                icon.textContent = '🔕';
-                text.textContent = 'Следить за ценой';
-            }
-        }
-        
-        async function toggleFavorite() {
-            const btn = document.getElementById('btn-favorite');
-            const isActive = btn.classList.contains('active');
-            
-            try {
-                const response = await fetch(`/api/favorites/${storeId}/${productId}`, {
-                    method: isActive ? 'DELETE' : 'POST'
-                });
-                
-                if (response.ok) {
-                    updateFavoriteUI(!isActive);
-                }
-            } catch (e) {
-                console.error('Error toggling favorite:', e);
-            }
-        }
-        
-        async function toggleAlert() {
-            const btn = document.getElementById('btn-alert');
-            const isActive = btn.classList.contains('active');
-            
-            try {
-                const response = await fetch(`/api/alerts/${storeId}/${productId}`, {
-                    method: isActive ? 'DELETE' : 'POST'
-                });
-                
-                if (response.ok) {
-                    updateAlertUI(!isActive);
-                }
-            } catch (e) {
-                console.error('Error toggling alert:', e);
-            }
-        }
-        
-        // Добавляем обработчики событий
-        document.getElementById('btn-favorite').addEventListener('click', toggleFavorite);
-        document.getElementById('btn-alert').addEventListener('click', toggleAlert);
-        
-        // Проверяем статус при загрузке
-        checkStatus();
-    </script>
-    {% endif %}
-</body>
-</html>
+    if (response.ok) {
+        btn.classList.toggle('active');
+        icon.textContent = isActive ? '🤍' : '❤️';
+        text.textContent = isActive ? 'В избранное' : 'В избранном';
+    }
+}
+
+// Alert toggle
+async function toggleAlert() {
+    const btn = document.getElementById('btn-alert');
+    const icon = document.getElementById('alert-icon');
+    const text = document.getElementById('alert-text');
+    const isActive = btn.classList.contains('active');
+    
+    const response = await fetch(`/api/alerts/${storeId}/${productId}`, {
+        method: isActive ? 'DELETE' : 'POST'
+    });
+    
+    if (response.ok) {
+        btn.classList.toggle('active');
+        icon.textContent = isActive ? '🔕' : '🔔';
+        text.textContent = isActive ? 'Следить' : 'Отслеживается';
+    }
+}
+</script>
+{% endblock %}

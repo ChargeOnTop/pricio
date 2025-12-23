@@ -499,7 +499,8 @@ def get_all_stats():
 def index():
     """Главная страница - выбор магазина"""
     stats = get_all_stats()
-    return render_template('home.html', stores=stats)
+    user = get_current_user()
+    return render_template('home.html', stores=stats, user=user, active_store=None)
 
 
 @app.route('/store/<store_id>')
@@ -508,20 +509,23 @@ def store_products(store_id):
     if store_id not in DATABASES:
         return "Магазин не найден", 404
     
+    user = get_current_user()
+    store_name = DATABASES[store_id]['name']
+    
     conn = get_db(store_id)
     if not conn:
         return render_template('index.html',
                                products=[],
                                categories=[],
-                               search='',
+                               search_query='',
                                current_category='',
-                               sort='last_updated',
-                               order='desc',
                                page=1,
                                total_pages=0,
-                               total=0,
-                               store=DATABASES[store_id],
-                               store_id=store_id)
+                               total_products=0,
+                               store_name=store_name,
+                               store_id=store_id,
+                               user=user,
+                               active_store=store_id)
     
     # Параметры
     search = request.args.get('search', '')
@@ -551,9 +555,10 @@ def store_products(store_id):
     
     products = conn.execute(query, params).fetchall()
     
-    categories = conn.execute(
+    categories_rows = conn.execute(
         "SELECT DISTINCT category FROM products WHERE category IS NOT NULL AND category != '' ORDER BY category"
     ).fetchall()
+    categories = [row['category'] for row in categories_rows]
     
     count_query = "SELECT COUNT(*) FROM products WHERE 1=1"
     count_params = []
@@ -572,15 +577,15 @@ def store_products(store_id):
     return render_template('index.html',
                            products=products,
                            categories=categories,
-                           search=search,
+                           search_query=search,
                            current_category=category,
-                           sort=sort,
-                           order=order,
                            page=page,
                            total_pages=total_pages,
-                           total=total,
-                           store=DATABASES[store_id],
-                           store_id=store_id)
+                           total_products=total,
+                           store_name=store_name,
+                           store_id=store_id,
+                           user=user,
+                           active_store=store_id)
 
 
 @app.route('/store/<store_id>/product/<product_id>')
@@ -588,6 +593,9 @@ def product_detail(store_id, product_id):
     """Страница товара с историей цен и похожими товарами"""
     if store_id not in DATABASES:
         return "Магазин не найден", 404
+    
+    user = get_current_user()
+    store_name = DATABASES[store_id]['name']
     
     conn = get_db(store_id)
     if not conn:
@@ -630,29 +638,41 @@ def product_detail(store_id, product_id):
         current_price, limit=6
     )
     
-    # Лучший аналог в другом магазине
-    best_match = None
+    # Лучший аналог в другом магазине (для сравнения)
+    comparison = None
     if similar_other_store:
         best = similar_other_store[0]
-        if best.get('is_exact_match') or best.get('similarity_score', 0) >= 50:
-            best_match = {
-                'product': best,
-                'savings': current_price - (best.get('current_price', 0) or 0),
-                'savings_percent': ((current_price - (best.get('current_price', 0) or 0)) / current_price * 100) if current_price else 0
-            }
+        if best.get('is_exact_match') or best.get('similarity_score', 0) >= 40:
+            comparison = dict(best)
+            comparison['store_id'] = other_store_id
+            comparison['store_name'] = DATABASES[other_store_id]['name']
+    
+    # История цен для графика (JSON)
+    import json
+    price_history_json = json.dumps([
+        {'date': h['recorded_at'][:10] if h['recorded_at'] else '', 'price': h['price']}
+        for h in history
+    ]) if history else '[]'
+    
+    # Проверяем избранное и уведомления
+    user_is_favorite = False
+    user_has_alert = False
+    if user:
+        user_is_favorite = is_favorite(user['id'], store_id, product_id)
+        user_has_alert = has_price_alert(user['id'], store_id, product_id)
     
     return render_template('product.html', 
-                           product=product, 
-                           history=history,
-                           store=DATABASES[store_id],
+                           product=product_dict, 
+                           price_history=history,
+                           price_history_json=price_history_json,
+                           store_name=store_name,
                            store_id=store_id,
-                           similar_same_store=similar_same_store,
-                           similar_other_store=similar_other_store,
-                           other_store=DATABASES.get(other_store_id),
-                           other_store_id=other_store_id,
-                           product_attrs=product_attrs,
-                           price_per_unit=price_per_unit,
-                           best_match=best_match)
+                           similar_products=similar_same_store,
+                           comparison=comparison,
+                           user=user,
+                           active_store=store_id,
+                           is_favorite=user_is_favorite,
+                           has_alert=user_has_alert)
 
 
 @app.route('/api/stats')
@@ -720,7 +740,7 @@ def register_page():
         
         if password != password_confirm:
             flash('Пароли не совпадают', 'error')
-            return render_template('register.html')
+            return render_template('register.html', user=None, active_store=None)
         
         result = register_user(username, email, password)
         
@@ -730,7 +750,7 @@ def register_page():
         else:
             flash(result['message'], 'error')
     
-    return render_template('register.html')
+    return render_template('register.html', user=None, active_store=None)
 
 
 @app.route('/login', methods=['GET', 'POST'])
@@ -757,7 +777,7 @@ def login_page():
         else:
             flash(result['message'], 'error')
     
-    return render_template('login.html')
+    return render_template('login.html', user=None, active_store=None)
 
 
 @app.route('/logout')
@@ -817,7 +837,8 @@ def favorites_page():
     return render_template('favorites.html', 
                            user=user, 
                            favorites=enriched_favorites,
-                           alerts=enriched_alerts)
+                           alerts=enriched_alerts,
+                           active_store=None)
 
 
 # ============================================================================
@@ -834,7 +855,8 @@ def profile_page():
     return render_template('profile.html',
                            user=user,
                            stats=stats,
-                           telegram_bot_username=TELEGRAM_BOT_USERNAME)
+                           telegram_bot_username=TELEGRAM_BOT_USERNAME,
+                           active_store=None)
 
 
 @app.route('/profile/link-telegram', methods=['POST'])
